@@ -1,0 +1,7 @@
+flask
+torch
+torchaudio
+demucs
+librosa
+soundfile
+werkzeug

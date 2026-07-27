@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SonicSplit AI - Studio Music Source Separation</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- WaveSurfer.js 7 -->
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+</head>
+<body>
+    <!-- Animated Studio Ambient Background -->
+    <div class="background-elements">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="toast hidden">
+        <span id="toastIcon">✨</span>
+        <span id="toastMessage">Welcome to SonicSplit Studio</span>
+    </div>
+
+    <div class="container">
+        <!-- Top Navigation / Header Bar -->
+        <header class="fade-in">
+            <div class="brand-box">
+                <div class="logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 18V5l12-2v13"></path>
+                        <circle cx="6" cy="18" r="3"></circle>
+                        <circle cx="18" cy="16" r="3"></circle>
+                    </svg>
+                </div>
+                <div>
+                    <h1>Sonic<span class="gradient-text">Split</span> <span class="badge">PRO AI</span></h1>
+                    <p class="subtitle">Next-Generation Music Stem Demixing & Interactive DAW Studio</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="headerDemoBtn" class="btn secondary-btn small-btn">
+                    <span class="btn-icon">⚡</span> Try Demo Track
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Feature Cards Section -->
+            <section class="features-section fade-in" id="featuresSection">
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper cyan">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5v14M22 8v8M7 5v14M2 8v8"></path></svg>
+                    </div>
+                    <h3>HTDemucs AI Engine</h3>
+                    <p>Hybrid Transformer architecture isolates Vocals, Drums, Bass & Instruments cleanly.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper purple">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </div>
+                    <h3>Multi-Track DAW Controls</h3>
+                    <p>Live stereo panning, per-stem mute/solo, volume sliders, and instant playback sync.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper green">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    </div>
+                    <h3>Instant ZIP Bundle Export</h3>
+                    <p>Download stems individually as studio WAV files or export all 4 as a single ZIP archive.</p>
+                </div>
+            </section>
+
+            <!-- Upload Card -->
+            <section class="card upload-section fade-in" id="uploadSection">
+                <div class="drag-area" id="dragArea">
+                    <div class="upload-icon-pulse">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                            <path d="M12 12v9"></path>
+                            <path d="m16 16-4-4-4 4"></path>
+                        </svg>
+                    </div>
+                    <h2>Drag & Drop Audio Track</h2>
+                    <p class="drag-subtext">Supports MP3, WAV, FLAC, AAC up to 100MB</p>
+                    <div class="button-group">
+                        <button class="btn primary-btn" onclick="document.getElementById('fileInput').click()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Browse Computer
+                        </button>
+                        <button class="btn secondary-btn" id="demoAudioBtn">
+                            ⚡ Use Demo Track
+                        </button>
+                    </div>
+                    <input type="file" id="fileInput" accept="audio/mp3, audio/wav, audio/flac, audio/m4a, audio/aac" hidden>
+                </div>
+
+                <!-- Selected File Inspector Panel -->
+                <div id="fileInspector" class="file-inspector hidden">
+                    <div class="file-meta-info">
+                        <div class="file-icon-badge">🎵</div>
+                        <div>
+                            <div class="file-name-title" id="fileNameDisplay">song_track.mp3</div>
+                            <div class="file-details" id="fileDetailsDisplay">3.4 MB • MP3 Audio File</div>
+                        </div>
+                    </div>
+                    <button class="btn icon-only-btn" id="clearFileBtn" title="Remove file">✕</button>
+                </div>
+
+                <!-- Processing Configuration Controls -->
+                <div class="controls-grid">
+                    <div class="control-box">
+                        <label for="modeSelect">AI Processing Engine Mode:</label>
+                        <select id="modeSelect" class="custom-select">
+                            <option value="fast" selected>⚡ Fast Mode (htdemucs) - Accelerated 1-Shift (Recommended)</option>
+                            <option value="quality">🎯 Studio Quality Mode (htdemucs_ft) - Multi-pass Isolation (Slower)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="processBtn" class="btn action-btn" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    Separate Audio Stems
+                </button>
+            </section>
+
+            <!-- Real-Time Progress Loader Section -->
+            <section class="card loading-section hidden" id="loadingSection">
+                <div class="loader-visual">
+                    <div class="radar-spinner"></div>
+                    <div class="progress-percent" id="progressPercent">0%</div>
+                </div>
+
+                <h3 id="loadingStatusTitle">Analyzing Spectrogram & Frequency Patterns...</h3>
+                <p class="loading-subtitle" id="loadingStatusSub">Demucs Neural Network is separating stem frequencies.</p>
+
+                <!-- Animated Progress Bar -->
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+
+                <!-- Stage Timeline Steps -->
+                <div class="stage-timeline">
+                    <div class="stage-item completed" id="stage1">
+                        <span class="stage-dot"></span> Upload
+                    </div>
+                    <div class="stage-item" id="stage2">
+                        <span class="stage-dot"></span> Convert WAV
+                    </div>
+                    <div class="stage-item" id="stage3">
+                        <span class="stage-dot"></span> AI Extraction
+                    </div>
+                    <div class="stage-item" id="stage4">
+                        <span class="stage-dot"></span> Render Studio
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section / Multi-Track DAW Remix Studio -->
+            <section class="card results-section hidden" id="resultsSection">
+                <!-- Studio Header & Master Transport Controls Bar -->
+                <div class="results-header">
+                    <div class="studio-title-block">
+                        <h2>Stem Remix Studio</h2>
+                        <p class="track-name-subtitle" id="currentTrackTitle">Active Track: song_track.mp3</p>
+                    </div>
+                    
+                    <div class="top-action-buttons">
+                        <button id="downloadZipBtn" class="btn export-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Download All (ZIP)
+                        </button>
+                        <button id="newSongBtn" class="btn secondary-btn">
+                            + Upload New
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Master DAW Transport Control Panel -->
+                <div class="master-transport-bar">
+                    <div class="transport-buttons">
+                        <button id="playAllBtn" class="btn master-play-btn" title="Play/Pause All (Spacebar)">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            <span>Play</span>
+                        </button>
+                        <button id="stopAllBtn" class="btn transport-icon-btn" title="Stop All">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+                        </button>
+                        <button id="loopBtn" class="btn transport-icon-btn" title="Toggle Loop">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- Master Time Counter & Seek Bar -->
+                    <div class="master-time-box">
+                        <span id="currentTimeDisplay" class="time-readout">00:00</span>
+                        <input type="range" id="masterSeekBar" class="master-seek-slider" min="0" max="100" value="0" step="0.1">
+                        <span id="totalDurationDisplay" class="time-readout">00:00</span>
+                    </div>
+
+                    <!-- Master Controls: Volume, Zoom, Reset -->
+                    <div class="master-right-controls">
+                        <div class="slider-control-group" title="Master Volume">
+                            <span class="ctrl-label">VOL</span>
+                            <input type="range" id="masterVolumeSlider" class="mini-slider" min="0" max="1" step="0.01" value="1">
+                        </div>
+                        <div class="slider-control-group" title="Waveform Zoom">
+                            <span class="ctrl-label">ZOOM</span>
+                            <input type="range" id="zoomSlider" class="mini-slider" min="10" max="200" step="5" value="20">
+                        </div>
+                        <button id="resetMixerBtn" class="btn secondary-btn tiny-btn" title="Reset all track volumes, pans, mute and solo states">
+                            🔄 Reset Mixer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Multi-Track Stem Containers -->
+                <div class="stems-container">
+                    <!-- Vocals Stem -->
+                    <div class="stem-track" id="track-vocals">
+                        <div class="stem-header-strip vocals-border">
+                            <div class="stem-title-box">
+                                <span class="stem-badge vocals-badge">🎤 VOCALS</span>
+                            </div>
+
+                            <div class="stem-controls-cluster">
+                                <!-- Stereo Pan Slider -->
+                                <div class="pan-box" title="Stereo Pan (L - C - R)">
+                                    <span class="pan-label">PAN</span>
+                                    <input type="range" class="pan-slider" data-target="vocals" min="-1" max="1" step="0.05" value="0">
+                                    <span class="pan-value" id="pan-val-vocals">C</span>
+                                </div>
+
+                                <!-- Mute & Solo Buttons -->
+                                <button class="btn icon-btn mute-btn" data-target="vocals" title="Mute Vocals (M)">M</button>
+                                <button class="btn icon-btn solo-btn" data-target="vocals" title="Solo Vocals (S)">S</button>
+
+                                <!-- Volume Slider -->
+                                <div class="vol-box" title="Stem Volume">
+                                    <input type="range" class="volume-slider" data-target="vocals" min="0" max="1" step="0.01" value="1">
+                                    <span class="vol-value" id="vol-val-vocals">100%</span>
+                                </div>
+
+                                <!-- Individual Stem Download Button -->
+                                <a id="download-vocals" class="btn icon-btn download-btn" download title="Download Vocals WAV">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="waveform-container" id="waveform-vocals"></div>
+                    </div>
+
+                    <!-- Drums Stem -->
+                    <div class="stem-track" id="track-drums">
+                        <div class="stem-header-strip drums-border">
+                            <div class="stem-title-box">
+                                <span class="stem-badge drums-badge">🥁 DRUMS</span>
+                            </div>
+
+                            <div class="stem-controls-cluster">
+                                <div class="pan-box" title="Stereo Pan (L - C - R)">
+                                    <span class="pan-label">PAN</span>
+                                    <input type="range" class="pan-slider" data-target="drums" min="-1" max="1" step="0.05" value="0">
+                                    <span class="pan-value" id="pan-val-drums">C</span>
+                                </div>
+
+                                <button class="btn icon-btn mute-btn" data-target="drums" title="Mute Drums (M)">M</button>
+                                <button class="btn icon-btn solo-btn" data-target="drums" title="Solo Drums (S)">S</button>
+
+                                <div class="vol-box" title="Stem Volume">
+                                    <input type="range" class="volume-slider" data-target="drums" min="0" max="1" step="0.01" value="1">
+                                    <span class="vol-value" id="vol-val-drums">100%</span>
+                                </div>
+
+                                <a id="download-drums" class="btn icon-btn download-btn" download title="Download Drums WAV">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="waveform-container" id="waveform-drums"></div>
+                    </div>
+
+                    <!-- Bass Stem -->
+                    <div class="stem-track" id="track-bass">
+                        <div class="stem-header-strip bass-border">
+                            <div class="stem-title-box">
+                                <span class="stem-badge bass-badge">🎸 BASS</span>
+                            </div>
+
+                            <div class="stem-controls-cluster">
+                                <div class="pan-box" title="Stereo Pan (L - C - R)">
+                                    <span class="pan-label">PAN</span>
+                                    <input type="range" class="pan-slider" data-target="bass" min="-1" max="1" step="0.05" value="0">
+                                    <span class="pan-value" id="pan-val-bass">C</span>
+                                </div>
+
+                                <button class="btn icon-btn mute-btn" data-target="bass" title="Mute Bass (M)">M</button>
+                                <button class="btn icon-btn solo-btn" data-target="bass" title="Solo Bass (S)">S</button>
+
+                                <div class="vol-box" title="Stem Volume">
+                                    <input type="range" class="volume-slider" data-target="bass" min="0" max="1" step="0.01" value="1">
+                                    <span class="vol-value" id="vol-val-bass">100%</span>
+                                </div>
+
+                                <a id="download-bass" class="btn icon-btn download-btn" download title="Download Bass WAV">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="waveform-container" id="waveform-bass"></div>
+                    </div>
+
+                    <!-- Other Stem -->
+                    <div class="stem-track" id="track-other">
+                        <div class="stem-header-strip other-border">
+                            <div class="stem-title-box">
+                                <span class="stem-badge other-badge">🎹 OTHER</span>
+                            </div>
+
+                            <div class="stem-controls-cluster">
+                                <div class="pan-box" title="Stereo Pan (L - C - R)">
+                                    <span class="pan-label">PAN</span>
+                                    <input type="range" class="pan-slider" data-target="other" min="-1" max="1" step="0.05" value="0">
+                                    <span class="pan-value" id="pan-val-other">C</span>
+                                </div>
+
+                                <button class="btn icon-btn mute-btn" data-target="other" title="Mute Other (M)">M</button>
+                                <button class="btn icon-btn solo-btn" data-target="other" title="Solo Other (S)">S</button>
+
+                                <div class="vol-box" title="Stem Volume">
+                                    <input type="range" class="volume-slider" data-target="other" min="0" max="1" step="0.01" value="1">
+                                    <span class="vol-value" id="vol-val-other">100%</span>
+                                </div>
+
+                                <a id="download-other" class="btn icon-btn download-btn" download title="Download Other WAV">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="waveform-container" id="waveform-other"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Script -->
+    <script src="/static/script.js"></script>
+</body>
+</html>
