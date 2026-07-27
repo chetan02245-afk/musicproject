@@ -436,16 +436,78 @@ document.addEventListener('DOMContentLoaded', () => {
             stems.forEach(s => wavesurfers[s] && wavesurfers[s].zoom(zoomPx));
         };
 
+        // Master Playback Speed Selector
+        const speedSelect = document.getElementById('speedSelect');
+        if (speedSelect) {
+            speedSelect.onchange = (e) => {
+                const rate = parseFloat(e.target.value);
+                stems.forEach(s => wavesurfers[s] && wavesurfers[s].setPlaybackRate(rate));
+                showToast(`Playback Speed: ${rate}x`, '⚡');
+            };
+        }
+
+        // Mix Presets Handlers
+        const presetKaraoke = document.getElementById('presetKaraoke');
+        const presetAcapella = document.getElementById('presetAcapella');
+        const presetDnB = document.getElementById('presetDnB');
+        const presetBacking = document.getElementById('presetBacking');
+
+        if (presetKaraoke) {
+            presetKaraoke.onclick = () => {
+                resetMixerBtn.click();
+                wavesurfers['vocals'] && wavesurfers['vocals'].setMuted(true);
+                const muteVocals = document.querySelector(`.mute-btn[data-target="vocals"]`);
+                if (muteVocals) muteVocals.classList.add('active');
+                showToast('Karaoke Mode (Vocals Muted)', '🎤');
+            };
+        }
+
+        if (presetAcapella) {
+            presetAcapella.onclick = () => {
+                resetMixerBtn.click();
+                const soloVocals = document.querySelector(`.solo-btn[data-target="vocals"]`);
+                if (soloVocals) soloVocals.click();
+                showToast('Acapella Mode (Vocals Only)', '🎙️');
+            };
+        }
+
+        if (presetDnB) {
+            presetDnB.onclick = () => {
+                resetMixerBtn.click();
+                ['vocals', 'other'].forEach(s => {
+                    wavesurfers[s] && wavesurfers[s].setMuted(true);
+                    const mBtn = document.querySelector(`.mute-btn[data-target="${s}"]`);
+                    if (mBtn) mBtn.classList.add('active');
+                });
+                showToast('Drum & Bass Mode', '🥁');
+            };
+        }
+
+        if (presetBacking) {
+            presetBacking.onclick = () => {
+                resetMixerBtn.click();
+                ['drums', 'bass', 'other'].forEach(s => {
+                    wavesurfers[s] && wavesurfers[s].setMuted(false);
+                });
+                wavesurfers['vocals'] && wavesurfers['vocals'].setMuted(true);
+                const mBtn = document.querySelector(`.mute-btn[data-target="vocals"]`);
+                if (mBtn) mBtn.classList.add('active');
+                showToast('Backing Track Mode', '🎹');
+            };
+        }
+
         // Reset Studio Mixer
         resetMixerBtn.onclick = () => {
             activeSoloTrack = null;
             document.querySelectorAll('.solo-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.mute-btn').forEach(btn => btn.classList.remove('active'));
+            if (speedSelect) speedSelect.value = "1.0";
 
             stems.forEach(s => {
                 if (wavesurfers[s]) {
                     wavesurfers[s].setVolume(1 * masterVolume);
                     wavesurfers[s].setMuted(false);
+                    wavesurfers[s].setPlaybackRate(1.0);
                 }
                 const volSlider = document.querySelector(`.volume-slider[data-target="${s}"]`);
                 if (volSlider) volSlider.value = 1;

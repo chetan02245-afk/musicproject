@@ -7,6 +7,14 @@ import subprocess
 from io import BytesIO
 from flask import Flask, request, jsonify, send_file, render_template
 
+# Helper for resolving ffmpeg executable safely
+def get_ffmpeg_exe():
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['OUTPUT_FOLDER'] = 'outputs'
@@ -25,13 +33,14 @@ def process_separation_job(job_id, filename, mode):
 
         model = 'htdemucs_ft' if mode == 'quality' else 'htdemucs'
 
-        import imageio_ffmpeg
-        ffmpeg_dir = os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe())
+        ffmpeg_exe = get_ffmpeg_exe()
         env = os.environ.copy()
-        env["PATH"] = ffmpeg_dir + os.pathsep + env["PATH"]
-        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        if ffmpeg_exe != "ffmpeg" and os.path.exists(ffmpeg_exe):
+            ffmpeg_dir = os.path.dirname(ffmpeg_exe)
+            env["PATH"] = ffmpeg_dir + os.pathsep + env["PATH"]
 
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
         wav_filename = os.path.splitext(filename)[0] + '.wav'
         wav_filepath = os.path.join(app.config['UPLOAD_FOLDER'], wav_filename)
 

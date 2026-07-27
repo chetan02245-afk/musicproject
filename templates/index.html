@@ -178,6 +178,15 @@
                     </div>
                 </div>
 
+                <!-- One-Click Studio Mix Presets Bar -->
+                <div class="presets-bar">
+                    <span class="presets-label">MIX PRESETS:</span>
+                    <button class="preset-btn" id="presetKaraoke">🎤 Karaoke (No Vocals)</button>
+                    <button class="preset-btn" id="presetAcapella">🎙️ Acapella (Vocals Only)</button>
+                    <button class="preset-btn" id="presetDnB">🥁 Drum & Bass</button>
+                    <button class="preset-btn" id="presetBacking">🎹 Backing Track</button>
+                </div>
+
                 <!-- Master DAW Transport Control Panel -->
                 <div class="master-transport-bar">
                     <div class="transport-buttons">
@@ -200,8 +209,18 @@
                         <span id="totalDurationDisplay" class="time-readout">00:00</span>
                     </div>
 
-                    <!-- Master Controls: Volume, Zoom, Reset -->
+                    <!-- Master Controls: Volume, Speed, Zoom, Reset -->
                     <div class="master-right-controls">
+                        <div class="slider-control-group" title="Playback Speed">
+                            <span class="ctrl-label">SPEED</span>
+                            <select id="speedSelect" class="mini-select">
+                                <option value="0.5">0.5x</option>
+                                <option value="0.75">0.75x</option>
+                                <option value="1.0" selected>1.0x</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x</option>
+                            </select>
+                        </div>
                         <div class="slider-control-group" title="Master Volume">
                             <span class="ctrl-label">VOL</span>
                             <input type="range" id="masterVolumeSlider" class="mini-slider" min="0" max="1" step="0.01" value="1">
@@ -211,7 +230,7 @@
                             <input type="range" id="zoomSlider" class="mini-slider" min="10" max="200" step="5" value="20">
                         </div>
                         <button id="resetMixerBtn" class="btn secondary-btn tiny-btn" title="Reset all track volumes, pans, mute and solo states">
-                            🔄 Reset Mixer
+                            🔄 Reset
                         </button>
                     </div>
                 </div>
