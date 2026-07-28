@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const demoAudioBtn = document.getElementById('demoAudioBtn');
     const headerDemoBtn = document.getElementById('headerDemoBtn');
+    const downloadZipBtnHeader = document.getElementById('downloadZipBtnHeader');
     
     const uploadSection = document.getElementById('uploadSection');
     const loadingSection = document.getElementById('loadingSection');
@@ -40,16 +41,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let isLooping = false;
     let isPlaying = false;
     let activeSoloTrack = null;
+    let activeModel = 'htdemucs';
+    let activeBaseName = 'track_audio';
 
     const stems = ['vocals', 'drums', 'bass', 'other'];
     const colors = {
-        vocals: '#ec4899',
-        drums: '#00f2fe',
+        vocals: '#f43f5e',
+        drums: '#38bdf8',
         bass: '#a855f7',
         other: '#10b981'
     };
 
-    // Helper: Toast Notifications
+    // Helper: Toast Notification System
     function showToast(msg, icon = '✨') {
         toastIcon.textContent = icon;
         toastMessage.textContent = msg;
@@ -110,14 +113,14 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInput.value = '';
         fileInspector.classList.add('hidden');
         processBtn.disabled = true;
-        showToast('File removed', '🗑️');
+        showToast('Audio file cleared', '🗑️');
     });
 
     function handleFileSelect(file) {
         const validExts = ['mp3', 'wav', 'flac', 'm4a', 'aac'];
         const ext = file.name.split('.').pop().toLowerCase();
         if (!validExts.includes(ext)) {
-            showToast('Please select a valid audio file (MP3, WAV, FLAC, M4A).', '⚠️');
+            showToast('Select a valid audio file (MP3, WAV, FLAC, M4A).', '⚠️');
             return;
         }
 
@@ -137,12 +140,23 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedFile = null;
             isDemoMode = true;
             fileNameDisplay.textContent = 'test_audio.wav (Demo Track)';
-            fileDetailsDisplay.textContent = 'Built-in Demo Sample Audio Track';
+            fileDetailsDisplay.textContent = 'Built-in Audio Sample Track';
             fileInspector.classList.remove('hidden');
             processBtn.disabled = false;
-            showToast('Demo track selected! Ready for stem separation.', '⚡');
+            showToast('Demo track loaded! Click Start AI Stem Separation.', '⚡');
         });
     });
+
+    // Top Card ZIP Bundle Export Header Trigger
+    if (downloadZipBtnHeader) {
+        downloadZipBtnHeader.onclick = () => {
+            if (activeBaseName && activeModel) {
+                window.location.href = `/download_zip/${activeModel}/${activeBaseName}`;
+            } else {
+                showToast('Load and separate a track first to export ZIP bundle!', '⚠️');
+            }
+        };
+    }
 
     // Start Separation Process
     processBtn.addEventListener('click', async () => {
@@ -156,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let filename = 'test_audio.wav';
 
             if (!isDemoMode) {
-                updateStage(stage1, 'active', 'Uploading file to studio server...');
+                updateStage(stage1, 'active', 'Uploading file to studio engine...');
                 const formData = new FormData();
                 formData.append('file', selectedFile);
 
@@ -172,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateStage(stage1, 'completed', 'Demo track ready!');
             }
 
-            // Start Job
+            // Start Separation Job
             updateStage(stage2, 'active', 'Initializing Demucs separation pipeline...');
             const mode = modeSelect.value;
             const separateRes = await fetch('/separate', {
@@ -194,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Polling Job Status
+    // Polling Job Status Loop
     function pollJobStatus(jobId) {
         if (pollInterval) clearInterval(pollInterval);
 
@@ -216,20 +230,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.status === 'completed') {
                     clearInterval(pollInterval);
-                    updateStage(stage4, 'completed', 'Finalizing Studio Waveforms!');
+                    updateStage(stage4, 'completed', 'Rendering Studio Rack!');
                     
+                    activeModel = data.model || 'htdemucs';
+                    activeBaseName = data.base_name || 'track';
+
                     setTimeout(() => {
                         loadingSection.classList.add('hidden');
                         resultsSection.classList.remove('hidden');
                         
-                        document.getElementById('currentTrackTitle').textContent = `Active Track: ${data.base_name || 'Track'}`;
+                        document.getElementById('currentTrackTitle').textContent = `Active Track: ${activeBaseName}`;
                         document.getElementById('downloadZipBtn').onclick = () => {
-                            window.location.href = `/download_zip/${data.model}/${data.base_name}`;
+                            window.location.href = `/download_zip/${activeModel}/${activeBaseName}`;
                         };
                         
                         initPlayers(data.stems);
-                        showToast('Stem separation complete! Enjoy your studio remix.', '🎉');
-                    }, 600);
+                        showToast('Demixing complete! Enjoy your studio remix.', '🎉');
+                    }, 500);
                 } else if (data.status === 'failed') {
                     clearInterval(pollInterval);
                     throw new Error(data.error || 'Demucs separation job failed');
@@ -246,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetStages() {
         [stage1, stage2, stage3, stage4].forEach(s => {
-            s.className = 'stage-item';
+            s.className = 'step-chip';
         });
         progressPercent.textContent = '0%';
         progressBarFill.style.width = '0%';
@@ -254,16 +271,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateStage(stageElem, state, msg) {
         if (state === 'active') {
-            stageElem.className = 'stage-item active';
+            stageElem.className = 'step-chip active';
         } else if (state === 'completed') {
-            stageElem.className = 'stage-item completed';
+            stageElem.className = 'step-chip completed';
         }
         if (msg) loadingStatusSub.textContent = msg;
     }
 
     // New Track Upload Button
     document.getElementById('newSongBtn').addEventListener('click', () => {
-        // Stop current audio playback
         stems.forEach(s => {
             if (wavesurfers[s]) wavesurfers[s].destroy();
         });
@@ -286,14 +302,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const ws = WaveSurfer.create({
                 container: container,
-                waveColor: 'rgba(255, 255, 255, 0.18)',
+                waveColor: 'rgba(255, 255, 255, 0.16)',
                 progressColor: colors[stem],
-                cursorColor: colors[stem],
+                cursorColor: '#f59e0b',
                 cursorWidth: 2,
                 barWidth: 2,
                 barGap: 1,
                 barRadius: 2,
-                height: 70,
+                height: 65,
                 normalize: true,
                 interact: true
             });
@@ -308,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const audioCtx = ws.backend.getAudioContext();
                     if (audioCtx && audioCtx.createStereoPanner) {
                         const panner = audioCtx.createStereoPanner();
-                        panner.pan.value = 0; // Center default
+                        panner.pan.value = 0;
                         ws.backend.outputNode.disconnect();
                         ws.backend.outputNode.connect(panner);
                         panner.connect(audioCtx.destination);
@@ -348,7 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Download Link setup
             document.getElementById(`download-${stem}`).href = stemUrls[stem];
         });
 
@@ -380,27 +395,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const loopBtn = document.getElementById('loopBtn');
         const masterSeekBar = document.getElementById('masterSeekBar');
         const masterVolumeSlider = document.getElementById('masterVolumeSlider');
+        const speedSelect = document.getElementById('speedSelect');
         const zoomSlider = document.getElementById('zoomSlider');
         const resetMixerBtn = document.getElementById('resetMixerBtn');
 
         isPlaying = false;
 
-        // Master Play / Pause Toggle
+        // Play / Pause Toggle
         playAllBtn.onclick = () => {
             isPlaying = !isPlaying;
             if (isPlaying) {
-                playAllBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> <span>Pause</span>`;
+                playAllBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> <span>Pause</span>`;
                 stems.forEach(s => wavesurfers[s] && wavesurfers[s].play());
             } else {
-                playAllBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <span>Play</span>`;
+                playAllBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <span>Play</span>`;
                 stems.forEach(s => wavesurfers[s] && wavesurfers[s].pause());
             }
         };
 
-        // Master Stop
+        // Stop All
         stopAllBtn.onclick = () => {
             isPlaying = false;
-            playAllBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <span>Play</span>`;
+            playAllBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <span>Play</span>`;
             stems.forEach(s => wavesurfers[s] && wavesurfers[s].stop());
             updateTimeDisplays();
         };
@@ -430,14 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
-        // Waveform Zoom Slider
-        zoomSlider.oninput = (e) => {
-            const zoomPx = parseInt(e.target.value, 10);
-            stems.forEach(s => wavesurfers[s] && wavesurfers[s].zoom(zoomPx));
-        };
-
-        // Master Playback Speed Selector
-        const speedSelect = document.getElementById('speedSelect');
+        // Playback Speed Selector
         if (speedSelect) {
             speedSelect.onchange = (e) => {
                 const rate = parseFloat(e.target.value);
@@ -445,6 +454,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast(`Playback Speed: ${rate}x`, '⚡');
             };
         }
+
+        // Waveform Zoom Slider
+        zoomSlider.oninput = (e) => {
+            const zoomPx = parseInt(e.target.value, 10);
+            stems.forEach(s => wavesurfers[s] && wavesurfers[s].zoom(zoomPx));
+        };
 
         // Mix Presets Handlers
         const presetKaraoke = document.getElementById('presetKaraoke');
@@ -479,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const mBtn = document.querySelector(`.mute-btn[data-target="${s}"]`);
                     if (mBtn) mBtn.classList.add('active');
                 });
-                showToast('Drum & Bass Mode', '🥁');
+                showToast('Rhythm Focus Mode (Drums & Bass)', '🥁');
             };
         }
 
@@ -492,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 wavesurfers['vocals'] && wavesurfers['vocals'].setMuted(true);
                 const mBtn = document.querySelector(`.mute-btn[data-target="vocals"]`);
                 if (mBtn) mBtn.classList.add('active');
-                showToast('Backing Track Mode', '🎹');
+                showToast('Instrumental Backing Track', '🎹');
             };
         }
 
@@ -522,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (pannerNodes[s]) pannerNodes[s].pan.value = 0;
             });
 
-            showToast('Studio mixer reset to defaults', '🔄');
+            showToast('Mixer reset to default parameters', '🔄');
         };
 
         // Keyboard Shortcuts
@@ -534,7 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Setup Per-Stem Controls
+    // Setup Stem Track Controls
     function setupStemControls() {
         stems.forEach(stem => {
             const volSlider = document.querySelector(`.volume-slider[data-target="${stem}"]`);
@@ -580,7 +595,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isCurrentlySolo = soloBtn.classList.contains('active');
 
                 if (isCurrentlySolo) {
-                    // Turn off solo
                     activeSoloTrack = null;
                     soloBtn.classList.remove('active');
                     stems.forEach(s => {
@@ -591,7 +605,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     showToast('Solo mode deactivated', '🎧');
                 } else {
-                    // Turn on solo for this stem
                     activeSoloTrack = stem;
                     document.querySelectorAll('.solo-btn').forEach(btn => btn.classList.remove('active'));
                     soloBtn.classList.add('active');
