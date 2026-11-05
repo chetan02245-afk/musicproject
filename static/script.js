@@ -1,68 +1,58 @@
+/* SonicSplit Studio — script.js */
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements - Navigation & Inputs
-    const dragArea = document.getElementById('dragArea');
-    const fileInput = document.getElementById('fileInput');
-    const browseBtn = document.getElementById('browseBtn');
-    const fileNameDisplay = document.getElementById('fileNameDisplay');
-    const fileDetailsDisplay = document.getElementById('fileDetailsDisplay');
-    const fileInspector = document.getElementById('fileInspector');
-    const clearFileBtn = document.getElementById('clearFileBtn');
-    const processBtn = document.getElementById('processBtn');
-    const modeSelect = document.getElementById('modeSelect');
 
-    const tabFileBtn = document.getElementById('tabFileBtn');
-    const tabUrlBtn = document.getElementById('tabUrlBtn');
+    // ── DOM refs ────────────────────────────────────────────────────────────
+    const dragArea          = document.getElementById('dragArea');
+    const fileInput         = document.getElementById('fileInput');
+    const browseBtn         = document.getElementById('browseBtn');
+    const fileNameDisplay   = document.getElementById('fileNameDisplay');
+    const fileDetailsDisplay= document.getElementById('fileDetailsDisplay');
+    const fileInspector     = document.getElementById('fileInspector');
+    const clearFileBtn      = document.getElementById('clearFileBtn');
+    const processBtn        = document.getElementById('processBtn');
+    const modeSelect        = document.getElementById('modeSelect');
+
+    const tabFileBtn        = document.getElementById('tabFileBtn');
+    const tabUrlBtn         = document.getElementById('tabUrlBtn');
     const urlInputContainer = document.getElementById('urlInputContainer');
-    const urlInput = document.getElementById('urlInput');
-    const fetchUrlBtn = document.getElementById('fetchUrlBtn');
+    const urlInput          = document.getElementById('urlInput');
+    const fetchUrlBtn       = document.getElementById('fetchUrlBtn');
 
-    const demoAudioBtn = document.getElementById('demoAudioBtn');
-    const headerDemoBtn = document.getElementById('headerDemoBtn');
-    const downloadZipBtnHeader = document.getElementById('downloadZipBtnHeader');
+    const uploadSection     = document.getElementById('uploadSection');
+    const loadingSection    = document.getElementById('loadingSection');
+    const resultsSection    = document.getElementById('resultsSection');
 
-    // Sections
-    const uploadSection = document.getElementById('uploadSection');
-    const loadingSection = document.getElementById('loadingSection');
-    const resultsSection = document.getElementById('resultsSection');
-
-    // Loader Progress Elements
-    const progressPercent = document.getElementById('progressPercent');
-    const progressBarFill = document.getElementById('progressBarFill');
-    const loadingStatusTitle = document.getElementById('loadingStatusTitle');
-    const loadingStatusSub = document.getElementById('loadingStatusSub');
+    const progressPercent   = document.getElementById('progressPercent');
+    const progressArc       = document.getElementById('progressArc');
+    const progressBarFill   = document.getElementById('progressBarFill');
+    const loadingStatusTitle= document.getElementById('loadingStatusTitle');
+    const loadingStatusSub  = document.getElementById('loadingStatusSub');
 
     const stage1 = document.getElementById('stage1');
     const stage2 = document.getElementById('stage2');
     const stage3 = document.getElementById('stage3');
     const stage4 = document.getElementById('stage4');
 
-    // Toast Notification System
-    const toast = document.getElementById('toast');
-    const toastIcon = document.getElementById('toastIcon');
+    const toast        = document.getElementById('toast');
+    const toastIcon    = document.getElementById('toastIcon');
     const toastMessage = document.getElementById('toastMessage');
 
-    // Studio State Variables
-    let selectedFile = null;
-    let uploadedFilename = null;
-    let isDemoMode = false;
-    let pollInterval = null;
-    let wavesurfers = {};
-    let pannerNodes = {};
-    let masterVolume = 1;
-    let isLooping = false;
-    let isPlaying = false;
-    let activeSoloTrack = null;
-    let activeModel = 'htdemucs';
-    let activeBaseName = 'track_audio';
-    let isSeeking = false;
+    // ── State ───────────────────────────────────────────────────────────────
+    const STEMS = ['vocals', 'drums', 'bass', 'other'];
+    const COLORS = { vocals: '#f43f5e', drums: '#38bdf8', bass: '#a855f7', other: '#10b981' };
 
-    const stems = ['vocals', 'drums', 'bass', 'other'];
-    const colors = {
-        vocals: '#f43f5e',
-        drums: '#38bdf8',
-        bass: '#a855f7',
-        other: '#10b981'
-    };
+    let selectedFile     = null;
+    let uploadedFilename = null;
+    let pollInterval     = null;
+    let wavesurfers      = {};
+    let pannerNodes      = {};
+    let masterVolume     = 1;
+    let isLooping        = false;
+    let isPlaying        = false;
+    let activeSoloTrack  = null;
+    let activeModel      = 'htdemucs';
+    let activeBaseName   = '';
+    let isSeeking        = false;
 
     const trackStates = {
         vocals: { volume: 1, muted: false, pan: 0 },
@@ -71,236 +61,162 @@ document.addEventListener('DOMContentLoaded', () => {
         other:  { volume: 1, muted: false, pan: 0 }
     };
 
-    // Helper: Toast Notifications
-    let toastTimeout = null;
+    // ── Toast ───────────────────────────────────────────────────────────────
+    let _toastTimer = null;
     function showToast(msg, icon = '✨') {
-        if (toastTimeout) clearTimeout(toastTimeout);
+        if (_toastTimer) clearTimeout(_toastTimer);
         toastIcon.textContent = icon;
         toastMessage.textContent = msg;
         toast.classList.remove('hidden');
-        toastTimeout = setTimeout(() => {
-            toast.classList.add('hidden');
-        }, 3500);
+        _toastTimer = setTimeout(() => toast.classList.add('hidden'), 3500);
     }
 
-    // Helper: Format Bytes
-    function formatBytes(bytes, decimals = 1) {
-        if (!bytes || bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function formatBytes(b) {
+        if (!b) return '0 B';
+        const i = Math.floor(Math.log(b) / Math.log(1024));
+        return (b / Math.pow(1024, i)).toFixed(1) + ' ' + ['B','KB','MB','GB'][i];
+    }
+    function formatTime(s) {
+        if (!s || isNaN(s) || s < 0) return '00:00';
+        return `${Math.floor(s/60).toString().padStart(2,'0')}:${Math.floor(s%60).toString().padStart(2,'0')}`;
     }
 
-    // Helper: Format Seconds to MM:SS
-    function formatTime(seconds) {
-        if (isNaN(seconds) || seconds === null || seconds < 0) return '00:00';
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    // Update the circular SVG arc based on progress (0-100)
+    function setProgressArc(pct) {
+        if (progressArc) progressArc.setAttribute('stroke-dasharray', `${pct}, 100`);
+        if (progressPercent) progressPercent.textContent = `${pct}%`;
+        if (progressBarFill) progressBarFill.style.width = `${pct}%`;
     }
 
-    // Tab Switching: Local File vs URL Fetch
-    if (tabFileBtn && tabUrlBtn) {
-        tabFileBtn.addEventListener('click', () => {
-            tabFileBtn.classList.add('active');
-            tabUrlBtn.classList.remove('active');
-            dragArea.classList.remove('hidden');
-            if (urlInputContainer) urlInputContainer.classList.add('hidden');
-        });
-
-        tabUrlBtn.addEventListener('click', () => {
-            tabUrlBtn.classList.add('active');
-            tabFileBtn.classList.remove('active');
-            dragArea.classList.add('hidden');
-            if (urlInputContainer) urlInputContainer.classList.remove('hidden');
-        });
-    }
-
-    // URL Fetch Audio Action
-    if (fetchUrlBtn && urlInput) {
-        fetchUrlBtn.addEventListener('click', async () => {
-            const url = urlInput.value.trim();
-            if (!url) {
-                showToast('Please enter an audio link', '⚠️');
-                return;
-            }
-
-            fetchUrlBtn.disabled = true;
-            fetchUrlBtn.textContent = '⏳ Fetching...';
-            showToast('Fetching audio stream from URL...', '🌐');
-
-            try {
-                const res = await fetch('/upload_url', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Failed to download audio from link');
-
-                selectedFile = null;
-                isDemoMode = false;
-                uploadedFilename = data.filename;
-
-                fileNameDisplay.textContent = data.original_name || data.filename;
-                fileDetailsDisplay.textContent = 'Web Stream Audio • Ready to Demix';
-                fileInspector.classList.remove('hidden');
-                processBtn.disabled = false;
-
-                showToast(`Audio fetched: ${data.original_name || data.filename}`, '🎵');
-            } catch (err) {
-                showToast(`Fetch error: ${err.message}`, '❌');
-            } finally {
-                fetchUrlBtn.disabled = false;
-                fetchUrlBtn.textContent = '⚡ Fetch Audio';
-            }
-        });
-    }
-
-    // File Browse Button
-    if (browseBtn) {
-        browseBtn.addEventListener('click', () => fileInput.click());
-    }
-
-    // Drag & Drop Handling
-    if (dragArea) {
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dragArea.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dragArea.classList.add('active');
-            });
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dragArea.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dragArea.classList.remove('active');
-            });
-        });
-
-        dragArea.addEventListener('drop', (e) => {
-            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                handleFileSelect(e.dataTransfer.files[0]);
-            }
-        });
-    }
-
-    if (fileInput) {
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files.length > 0) {
-                handleFileSelect(e.target.files[0]);
-            }
-        });
-    }
-
-    function handleFileSelect(file) {
-        const validExts = ['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg'];
-        const ext = file.name.split('.').pop().toLowerCase();
-        if (!validExts.includes(ext)) {
-            showToast('Please select a valid audio format (MP3, WAV, FLAC, M4A, OGG).', '⚠️');
-            return;
-        }
-
-        selectedFile = file;
-        uploadedFilename = null;
-        isDemoMode = false;
-
-        fileNameDisplay.textContent = file.name;
-        fileDetailsDisplay.textContent = `${formatBytes(file.size)} • ${ext.toUpperCase()} Audio Format`;
-        fileInspector.classList.remove('hidden');
-        processBtn.disabled = false;
-
-        showToast(`Loaded ${file.name}`, '🎵');
-    }
-
-    // Clear File Handler
-    if (clearFileBtn) {
-        clearFileBtn.addEventListener('click', () => {
-            selectedFile = null;
-            uploadedFilename = null;
-            isDemoMode = false;
-            if (fileInput) fileInput.value = '';
-            if (urlInput) urlInput.value = '';
-            fileInspector.classList.add('hidden');
-            processBtn.disabled = true;
-            showToast('Audio file cleared', '🗑️');
-        });
-    }
-
-    // Demo Audio Trigger
-    [demoAudioBtn, headerDemoBtn].forEach(btn => {
-        if (!btn) return;
-        btn.addEventListener('click', () => {
-            selectedFile = null;
-            uploadedFilename = 'test_audio.wav';
-            isDemoMode = true;
-            fileNameDisplay.textContent = 'test_audio.wav (Demo Track)';
-            fileDetailsDisplay.textContent = 'Built-in Demo Sample Audio Track';
-            fileInspector.classList.remove('hidden');
-            processBtn.disabled = false;
-            showToast('Demo track loaded! Click Start AI Stem Separation.', '⚡');
-        });
+    // ── Tabs ────────────────────────────────────────────────────────────────
+    tabFileBtn.addEventListener('click', () => {
+        tabFileBtn.classList.add('active');
+        tabUrlBtn.classList.remove('active');
+        dragArea.classList.remove('hidden');
+        urlInputContainer.classList.add('hidden');
+    });
+    tabUrlBtn.addEventListener('click', () => {
+        tabUrlBtn.classList.add('active');
+        tabFileBtn.classList.remove('active');
+        dragArea.classList.add('hidden');
+        urlInputContainer.classList.remove('hidden');
     });
 
-    // Top Card ZIP Bundle Export Header Trigger
-    if (downloadZipBtnHeader) {
-        downloadZipBtnHeader.onclick = () => {
-            if (activeBaseName && activeModel) {
-                window.location.href = `/download_zip/${activeModel}/${encodeURIComponent(activeBaseName)}`;
-            } else {
-                showToast('Demix a song first to export ZIP bundle!', '⚠️');
-            }
-        };
+    // ── URL Fetch ────────────────────────────────────────────────────────────
+    fetchUrlBtn.addEventListener('click', async () => {
+        const url = urlInput.value.trim();
+        if (!url) { showToast('Please enter an audio URL', '⚠️'); return; }
+
+        fetchUrlBtn.disabled = true;
+        fetchUrlBtn.textContent = 'Fetching…';
+        showToast('Fetching audio from URL…', '🌐');
+
+        try {
+            const res  = await fetch('/upload_url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'URL fetch failed');
+
+            selectedFile     = null;
+            uploadedFilename = data.filename;
+            fileNameDisplay.textContent   = data.original_name || data.filename;
+            fileDetailsDisplay.textContent= 'Web Audio · Ready';
+            fileInspector.classList.remove('hidden');
+            processBtn.disabled = false;
+            showToast(`Loaded: ${data.original_name || data.filename}`, '🎵');
+        } catch (err) {
+            showToast(`Error: ${err.message}`, '❌');
+        } finally {
+            fetchUrlBtn.disabled = false;
+            fetchUrlBtn.textContent = 'Fetch';
+        }
+    });
+
+    // ── File Browse & Drag ──────────────────────────────────────────────────
+    browseBtn.addEventListener('click', () => fileInput.click());
+
+    ['dragenter','dragover'].forEach(e => dragArea.addEventListener(e, ev => {
+        ev.preventDefault(); dragArea.classList.add('active');
+    }));
+    ['dragleave','drop'].forEach(e => dragArea.addEventListener(e, ev => {
+        ev.preventDefault(); dragArea.classList.remove('active');
+    }));
+    dragArea.addEventListener('drop', e => {
+        const f = e.dataTransfer.files?.[0];
+        if (f) handleFileSelect(f);
+    });
+    fileInput.addEventListener('change', e => {
+        const f = e.target.files?.[0];
+        if (f) handleFileSelect(f);
+    });
+
+    function handleFileSelect(file) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['mp3','wav','flac','m4a','aac','ogg'].includes(ext)) {
+            showToast('Unsupported format. Use MP3, WAV, FLAC, M4A, OGG.', '⚠️'); return;
+        }
+        selectedFile     = file;
+        uploadedFilename = null;
+        fileNameDisplay.textContent    = file.name;
+        fileDetailsDisplay.textContent = `${formatBytes(file.size)} · ${ext.toUpperCase()}`;
+        fileInspector.classList.remove('hidden');
+        processBtn.disabled = false;
+        showToast(`Loaded: ${file.name}`, '🎵');
     }
 
-    // Start Separation Process
+    clearFileBtn.addEventListener('click', () => {
+        selectedFile = null; uploadedFilename = null;
+        if (fileInput) fileInput.value = '';
+        if (urlInput)  urlInput.value  = '';
+        fileInspector.classList.add('hidden');
+        processBtn.disabled = true;
+        showToast('File removed', '🗑️');
+    });
+
+    // ── Start Separation ────────────────────────────────────────────────────
     processBtn.addEventListener('click', async () => {
-        if (!selectedFile && !isDemoMode && !uploadedFilename) return;
+        if (!selectedFile && !uploadedFilename) return;
 
         uploadSection.classList.add('hidden');
         loadingSection.classList.remove('hidden');
         resetStages();
+        setProgressArc(0);
 
         try {
-            let filenameToProcess = uploadedFilename;
+            let filename = uploadedFilename;
 
-            // 1. Upload file to backend if not already uploaded or demo
-            if (!filenameToProcess && selectedFile) {
-                updateStage(stage1, 'active', 'Uploading audio to studio engine...');
-                const formData = new FormData();
-                formData.append('file', selectedFile);
-
-                const uploadRes = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                const uploadData = await uploadRes.json();
-                if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed');
-
-                filenameToProcess = uploadData.filename;
-                uploadedFilename = filenameToProcess;
-                updateStage(stage1, 'completed', 'Uploaded successfully!');
+            if (!filename && selectedFile) {
+                updateStage(stage1, 'active');
+                loadingStatusTitle.textContent = 'Uploading audio…';
+                const fd = new FormData();
+                fd.append('file', selectedFile);
+                const r  = await fetch('/upload', { method: 'POST', body: fd });
+                const d  = await r.json();
+                if (!r.ok) throw new Error(d.error || 'Upload failed');
+                filename = d.filename;
+                uploadedFilename = filename;
+                updateStage(stage1, 'completed');
             } else {
-                updateStage(stage1, 'completed', 'Audio source ready!');
+                updateStage(stage1, 'completed');
             }
 
-            // 2. Start Separation Job
-            updateStage(stage2, 'active', 'Initializing Demucs AI neural network...');
-            const mode = modeSelect ? modeSelect.value : 'fast';
+            updateStage(stage2, 'active');
+            loadingStatusTitle.textContent = 'Starting AI engine…';
 
-            const separateRes = await fetch('/separate', {
+            const mode = modeSelect ? modeSelect.value : 'balanced';
+            const sr   = await fetch('/separate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename: filenameToProcess, mode: mode })
+                body: JSON.stringify({ filename, mode })
             });
-            const separateData = await separateRes.json();
-            if (!separateRes.ok) throw new Error(separateData.error || 'Failed to start separation');
+            const sd = await sr.json();
+            if (!sr.ok) throw new Error(sd.error || 'Separation failed to start');
 
-            const jobId = separateData.job_id;
-            pollJobStatus(jobId);
+            pollJobStatus(sd.job_id);
 
         } catch (err) {
             showToast(`Error: ${err.message}`, '❌');
@@ -309,550 +225,433 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Polling Job Status Loop
+    // ── Polling ─────────────────────────────────────────────────────────────
     function pollJobStatus(jobId) {
         if (pollInterval) clearInterval(pollInterval);
 
         pollInterval = setInterval(async () => {
             try {
-                const res = await fetch(`/status/${jobId}`);
+                const res  = await fetch(`/status/${jobId}`);
                 if (!res.ok) return;
-
                 const data = await res.json();
-                const pct = data.progress || 0;
+                const pct  = data.progress || 0;
 
-                progressPercent.textContent = `${pct}%`;
-                progressBarFill.style.width = `${pct}%`;
-                loadingStatusTitle.textContent = data.message || 'Processing Audio...';
+                setProgressArc(pct);
+                loadingStatusTitle.textContent = data.message || 'Processing…';
 
                 if (pct >= 15) updateStage(stage2, 'completed');
-                if (pct >= 25) updateStage(stage3, 'active', 'Isolating Vocals, Drums, Bass & Instruments...');
+                if (pct >= 25) updateStage(stage3, 'active');
                 if (pct >= 95) updateStage(stage3, 'completed');
 
                 if (data.status === 'completed') {
                     clearInterval(pollInterval);
-                    updateStage(stage4, 'completed', 'Rendering Studio Rack!');
-
-                    activeModel = data.model || 'htdemucs';
+                    updateStage(stage4, 'completed');
+                    setProgressArc(100);
+                    activeModel    = data.model    || 'htdemucs';
                     activeBaseName = data.base_name || 'track';
 
                     setTimeout(() => {
                         loadingSection.classList.add('hidden');
                         resultsSection.classList.remove('hidden');
-
-                        document.getElementById('currentTrackTitle').textContent = `Active Track: ${activeBaseName}`;
+                        document.getElementById('currentTrackTitle').textContent = activeBaseName;
                         document.getElementById('downloadZipBtn').onclick = () => {
                             window.location.href = `/download_zip/${activeModel}/${encodeURIComponent(activeBaseName)}`;
                         };
-
                         initPlayers(data.stems);
-                        showToast('AI Demixing complete! Enjoy your studio remix.', '🎉');
+                        showToast('Stems ready! Adjust your mix below.', '🎉');
                     }, 400);
 
                 } else if (data.status === 'failed') {
                     clearInterval(pollInterval);
-                    throw new Error(data.error || 'Demucs separation job failed');
+                    throw new Error(data.error || 'Separation failed');
                 }
 
             } catch (err) {
                 clearInterval(pollInterval);
-                showToast(`Separation failed: ${err.message}`, '❌');
+                showToast(`Failed: ${err.message}`, '❌');
                 loadingSection.classList.add('hidden');
                 uploadSection.classList.remove('hidden');
             }
-        }, 600);
+        }, 700);
     }
 
+    // ── Stage helpers ────────────────────────────────────────────────────────
     function resetStages() {
-        [stage1, stage2, stage3, stage4].forEach(s => {
-            if (s) s.className = 'step-chip';
-        });
-        progressPercent.textContent = '0%';
-        progressBarFill.style.width = '0%';
+        [stage1,stage2,stage3,stage4].forEach(s => { if (s) s.className = 'step'; });
+        loadingStatusTitle.textContent = 'Preparing audio…';
+        loadingStatusSub.textContent   = 'Demucs AI is isolating your stems.';
+    }
+    function updateStage(el, state) {
+        if (!el) return;
+        el.classList.remove('active','completed');
+        if (state) el.classList.add(state);
     }
 
-    function updateStage(stageElem, state, msg) {
-        if (!stageElem) return;
-        if (state === 'active') {
-            stageElem.className = 'step-chip active';
-        } else if (state === 'completed') {
-            stageElem.className = 'step-chip completed';
-        }
-        if (msg && loadingStatusSub) loadingStatusSub.textContent = msg;
-    }
-
-    // Destroy existing WaveSurfer instances cleanly
+    // ── Destroy & Reset ──────────────────────────────────────────────────────
     function destroyPlayers() {
-        stems.forEach(s => {
+        STEMS.forEach(s => {
             if (wavesurfers[s]) {
-                try {
-                    wavesurfers[s].pause();
-                    wavesurfers[s].destroy();
-                } catch (e) {
-                    console.error(`Error cleaning wavesurfer ${s}:`, e);
-                }
+                try { wavesurfers[s].pause(); wavesurfers[s].destroy(); } catch {}
                 wavesurfers[s] = null;
             }
-            const container = document.getElementById(`waveform-${s}`);
-            if (container) container.innerHTML = '';
+            const c = document.getElementById(`waveform-${s}`);
+            if (c) c.innerHTML = '';
         });
-        wavesurfers = {};
-        pannerNodes = {};
+        wavesurfers  = {};
+        pannerNodes  = {};
     }
 
-    // Reset view for "+ New Track"
     function resetToUploadView() {
         destroyPlayers();
-        isPlaying = false;
-        activeSoloTrack = null;
-        selectedFile = null;
-        uploadedFilename = null;
-        isDemoMode = false;
-
+        isPlaying = false; activeSoloTrack = null;
+        selectedFile = null; uploadedFilename = null;
         if (fileInput) fileInput.value = '';
-        if (urlInput) urlInput.value = '';
-        if (fileInspector) fileInspector.classList.add('hidden');
-        if (fileNameDisplay) fileNameDisplay.textContent = '';
-        if (fileDetailsDisplay) fileDetailsDisplay.textContent = '';
-        if (processBtn) processBtn.disabled = true;
+        if (urlInput)  urlInput.value  = '';
+        fileInspector.classList.add('hidden');
+        fileNameDisplay.textContent    = '';
+        fileDetailsDisplay.textContent = '';
+        processBtn.disabled = true;
 
-        // Reset Play button UI
-        const playAllBtn = document.getElementById('playAllBtn');
-        if (playAllBtn) {
-            playAllBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <span>Play</span>`;
-        }
+        const pb = document.getElementById('playAllBtn');
+        if (pb) pb.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play</span>`;
 
-        // Reset Track States & UI Strips
-        stems.forEach(s => {
-            trackStates[s] = { volume: 1, muted: false, pan: 0 };
+        STEMS.forEach(s => {
+            trackStates[s] = { volume:1, muted:false, pan:0 };
             const mBtn = document.querySelector(`.mute-btn[data-target="${s}"]`);
-            if (mBtn) mBtn.classList.remove('active');
             const sBtn = document.querySelector(`.solo-btn[data-target="${s}"]`);
+            const vol  = document.querySelector(`.volume-slider[data-target="${s}"]`);
+            const pan  = document.querySelector(`.pan-slider[data-target="${s}"]`);
+            if (mBtn) mBtn.classList.remove('active');
             if (sBtn) sBtn.classList.remove('active');
-            const volSlider = document.querySelector(`.volume-slider[data-target="${s}"]`);
-            if (volSlider) volSlider.value = 1;
-            const volVal = document.getElementById(`vol-val-${s}`);
-            if (volVal) volVal.textContent = '100%';
-            const panSlider = document.querySelector(`.pan-slider[data-target="${s}"]`);
-            if (panSlider) panSlider.value = 0;
-            const panVal = document.getElementById(`pan-val-${s}`);
-            if (panVal) panVal.textContent = 'C';
+            if (vol)  vol.value = 1;
+            if (pan)  pan.value = 0;
+            const vv = document.getElementById(`vol-val-${s}`);
+            const pv = document.getElementById(`pan-val-${s}`);
+            if (vv) vv.textContent = '100%';
+            if (pv) pv.textContent = 'C';
         });
 
         resetStages();
+        setProgressArc(0);
         resultsSection.classList.add('hidden');
         loadingSection.classList.add('hidden');
         uploadSection.classList.remove('hidden');
-
-        showToast('Ready for new song! Drop or browse audio.', '🎵');
+        showToast('Ready — drop a new track', '🎵');
     }
 
-    // Hook up "+ New Track" button
-    const newSongBtn = document.getElementById('newSongBtn');
-    if (newSongBtn) {
-        newSongBtn.addEventListener('click', resetToUploadView);
-    }
+    document.getElementById('newSongBtn')?.addEventListener('click', resetToUploadView);
 
-    // Stereo Panner Node setup for WebAudio
-    function setupTrackAudioNodes(stem, ws) {
+    // ── Web Audio stereo panner ──────────────────────────────────────────────
+    function setupPanner(stem, ws) {
         try {
-            const mediaEl = ws.getMediaElement();
+            const mediaEl = ws.getMediaElement?.();
             if (!mediaEl) return;
-
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContextClass) return;
-
-            if (!window.studioAudioCtx) {
-                window.studioAudioCtx = new AudioContextClass();
-            }
-            const ctx = window.studioAudioCtx;
-
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            if (!window._studioCtx) window._studioCtx = new AC();
+            const ctx = window._studioCtx;
             if (ctx.state === 'suspended') {
-                const resumeCtx = () => {
-                    ctx.resume();
-                    document.removeEventListener('click', resumeCtx);
-                };
-                document.addEventListener('click', resumeCtx);
+                const resume = () => { ctx.resume(); document.removeEventListener('click', resume); };
+                document.addEventListener('click', resume);
             }
-
             if (ctx.createStereoPanner && !ws._pannerConnected) {
-                const sourceNode = ctx.createMediaElementSource(mediaEl);
-                const pannerNode = ctx.createStereoPanner();
-                pannerNode.pan.value = trackStates[stem].pan;
-                sourceNode.connect(pannerNode);
-                pannerNode.connect(ctx.destination);
-                pannerNodes[stem] = pannerNode;
-                ws._pannerConnected = true;
+                const src     = ctx.createMediaElementSource(mediaEl);
+                const panner  = ctx.createStereoPanner();
+                panner.pan.value = trackStates[stem].pan;
+                src.connect(panner); panner.connect(ctx.destination);
+                pannerNodes[stem]    = panner;
+                ws._pannerConnected  = true;
             }
-        } catch (err) {
-            // Already connected or cross-origin fallback
-        }
+        } catch {}
     }
 
-    // Initialize WaveSurfer Players
+    // ── Init WaveSurfer players ──────────────────────────────────────────────
     function initPlayers(stemUrls) {
         destroyPlayers();
-        const totalTracks = stems.length;
-        let loadedCount = 0;
+        let loaded = 0;
+        const total = STEMS.length;
 
-        stems.forEach(stem => {
+        STEMS.forEach(stem => {
             const container = document.getElementById(`waveform-${stem}`);
             if (!container) return;
             container.innerHTML = '';
 
             const ws = WaveSurfer.create({
-                container: container,
-                waveColor: 'rgba(255, 255, 255, 0.16)',
-                progressColor: colors[stem],
-                cursorColor: '#f59e0b',
-                cursorWidth: 2,
-                barWidth: 2,
-                barGap: 1,
-                barRadius: 2,
-                height: 65,
-                normalize: true,
-                interact: true
+                container,
+                waveColor:     'rgba(255,255,255,0.14)',
+                progressColor: COLORS[stem],
+                cursorColor:   '#f59e0b',
+                cursorWidth:   2,
+                barWidth:      2,
+                barGap:        1,
+                barRadius:     2,
+                height:        60,
+                normalize:     true,
+                interact:      true
             });
 
             ws.load(stemUrls[stem]);
             wavesurfers[stem] = ws;
 
             ws.on('ready', () => {
-                loadedCount++;
-                setupTrackAudioNodes(stem, ws);
-
-                // Set initial volume & mute state
+                loaded++;
+                setupPanner(stem, ws);
                 ws.setVolume(trackStates[stem].volume * masterVolume);
                 ws.setMuted(trackStates[stem].muted);
-
-                if (loadedCount === totalTracks) {
-                    updateTimeDisplays();
-                }
+                if (loaded === total) updateTimeDisplays();
             });
 
-            // Synchronized seek on track click
             ws.on('interaction', () => {
-                const time = ws.getCurrentTime();
                 const dur = ws.getDuration();
                 if (dur > 0) {
-                    const ratio = time / dur;
-                    stems.forEach(s => {
-                        if (s !== stem && wavesurfers[s]) {
-                            wavesurfers[s].seekTo(ratio);
-                        }
-                    });
+                    const ratio = ws.getCurrentTime() / dur;
+                    STEMS.forEach(s => { if (s !== stem && wavesurfers[s]) wavesurfers[s].seekTo(ratio); });
                 }
                 updateTimeDisplays();
             });
 
-            // Sync timeline
             ws.on('timeupdate', () => {
-                if (stem === 'vocals') {
-                    updateTimeDisplays();
-                }
+                if (stem === 'vocals') updateTimeDisplays();
             });
 
             ws.on('finish', () => {
                 if (isLooping && stem === 'vocals') {
-                    stems.forEach(s => wavesurfers[s] && wavesurfers[s].play(0));
+                    STEMS.forEach(s => wavesurfers[s]?.play());
                 }
             });
 
-            const downloadLink = document.getElementById(`download-${stem}`);
-            if (downloadLink) downloadLink.href = stemUrls[stem];
+            const dlLink = document.getElementById(`download-${stem}`);
+            if (dlLink) dlLink.href = stemUrls[stem];
         });
     }
 
-    // Update Time Counter & Master Seek Slider
+    // ── Time display ─────────────────────────────────────────────────────────
     function updateTimeDisplays() {
-        const refTrack = wavesurfers['vocals'] || Object.values(wavesurfers)[0];
-        if (!refTrack) return;
-
-        const currentSec = refTrack.getCurrentTime();
-        const durationSec = refTrack.getDuration();
-
-        const curElem = document.getElementById('currentTimeDisplay');
-        const durElem = document.getElementById('totalDurationDisplay');
-        if (curElem) curElem.textContent = formatTime(currentSec);
-        if (durElem) durElem.textContent = formatTime(durationSec);
-
-        const masterSeekBar = document.getElementById('masterSeekBar');
-        if (masterSeekBar && !isSeeking && durationSec > 0) {
-            masterSeekBar.value = (currentSec / durationSec) * 100;
-        }
+        const ref = wavesurfers['vocals'] || Object.values(wavesurfers)[0];
+        if (!ref) return;
+        const cur = ref.getCurrentTime();
+        const dur = ref.getDuration();
+        const curEl = document.getElementById('currentTimeDisplay');
+        const durEl = document.getElementById('totalDurationDisplay');
+        if (curEl) curEl.textContent = formatTime(cur);
+        if (durEl) durEl.textContent = formatTime(dur);
+        const sb = document.getElementById('masterSeekBar');
+        if (sb && !isSeeking && dur > 0) sb.value = (cur / dur) * 100;
     }
 
-    // Setup Master Transport Controls (Registered ONCE)
+    // ── Master Transport ──────────────────────────────────────────────────────
     function setupMasterControls() {
-        const playAllBtn = document.getElementById('playAllBtn');
-        const stopAllBtn = document.getElementById('stopAllBtn');
-        const loopBtn = document.getElementById('loopBtn');
-        const masterSeekBar = document.getElementById('masterSeekBar');
-        const masterVolumeSlider = document.getElementById('masterVolumeSlider');
-        const speedSelect = document.getElementById('speedSelect');
+        const playBtn    = document.getElementById('playAllBtn');
+        const stopBtn    = document.getElementById('stopAllBtn');
+        const loopBtn    = document.getElementById('loopBtn');
+        const seekBar    = document.getElementById('masterSeekBar');
+        const volSlider  = document.getElementById('masterVolumeSlider');
+        const speedSel   = document.getElementById('speedSelect');
         const zoomSlider = document.getElementById('zoomSlider');
-        const resetMixerBtn = document.getElementById('resetMixerBtn');
 
         isPlaying = false;
 
-        // Play / Pause Toggle
-        if (playAllBtn) {
-            playAllBtn.onclick = () => {
+        if (playBtn) {
+            playBtn.onclick = () => {
                 isPlaying = !isPlaying;
                 if (isPlaying) {
-                    playAllBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> <span>Pause</span>`;
-                    stems.forEach(s => wavesurfers[s] && wavesurfers[s].play());
+                    playBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg><span>Pause</span>`;
+                    STEMS.forEach(s => wavesurfers[s]?.play());
                 } else {
-                    playAllBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <span>Play</span>`;
-                    stems.forEach(s => wavesurfers[s] && wavesurfers[s].pause());
+                    playBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play</span>`;
+                    STEMS.forEach(s => wavesurfers[s]?.pause());
                 }
             };
         }
 
-        // Stop All
-        if (stopAllBtn) {
-            stopAllBtn.onclick = () => {
+        if (stopBtn) {
+            stopBtn.onclick = () => {
                 isPlaying = false;
-                if (playAllBtn) {
-                    playAllBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <span>Play</span>`;
-                }
-                stems.forEach(s => wavesurfers[s] && wavesurfers[s].stop());
+                if (playBtn) playBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Play</span>`;
+                STEMS.forEach(s => wavesurfers[s]?.stop());
                 updateTimeDisplays();
             };
         }
 
-        // Loop Toggle
         if (loopBtn) {
             loopBtn.onclick = () => {
                 isLooping = !isLooping;
                 loopBtn.classList.toggle('active', isLooping);
-                showToast(isLooping ? 'Loop Mode Enabled' : 'Loop Mode Disabled', '🔁');
+                showToast(isLooping ? 'Loop ON' : 'Loop OFF', '🔁');
             };
         }
 
-        // Master Seek Slider with Drag Detection
-        if (masterSeekBar) {
-            masterSeekBar.addEventListener('mousedown', () => { isSeeking = true; });
-            masterSeekBar.addEventListener('touchstart', () => { isSeeking = true; });
-
-            const commitSeek = (e) => {
+        if (seekBar) {
+            seekBar.addEventListener('mousedown',  () => isSeeking = true);
+            seekBar.addEventListener('touchstart', () => isSeeking = true);
+            const commitSeek = e => {
                 isSeeking = false;
                 const pct = parseFloat(e.target.value) / 100;
-                stems.forEach(s => wavesurfers[s] && wavesurfers[s].seekTo(pct));
+                STEMS.forEach(s => wavesurfers[s]?.seekTo(pct));
                 updateTimeDisplays();
             };
-
-            masterSeekBar.addEventListener('change', commitSeek);
-            masterSeekBar.addEventListener('mouseup', commitSeek);
-            masterSeekBar.addEventListener('touchend', commitSeek);
-
-            masterSeekBar.oninput = (e) => {
+            seekBar.addEventListener('change',   commitSeek);
+            seekBar.addEventListener('mouseup',  commitSeek);
+            seekBar.addEventListener('touchend', commitSeek);
+            seekBar.oninput = e => {
                 const pct = parseFloat(e.target.value) / 100;
-                stems.forEach(s => wavesurfers[s] && wavesurfers[s].seekTo(pct));
+                STEMS.forEach(s => wavesurfers[s]?.seekTo(pct));
                 updateTimeDisplays();
             };
         }
 
-        // Master Volume Slider
-        if (masterVolumeSlider) {
-            masterVolumeSlider.oninput = (e) => {
+        if (volSlider) {
+            volSlider.oninput = e => {
                 masterVolume = parseFloat(e.target.value);
-                stems.forEach(s => {
-                    if (wavesurfers[s]) {
-                        wavesurfers[s].setVolume(trackStates[s].volume * masterVolume);
-                    }
-                });
+                STEMS.forEach(s => { if (wavesurfers[s]) wavesurfers[s].setVolume(trackStates[s].volume * masterVolume); });
             };
         }
 
-        // Playback Speed Selector
-        if (speedSelect) {
-            speedSelect.onchange = (e) => {
-                const rate = parseFloat(e.target.value);
-                stems.forEach(s => wavesurfers[s] && wavesurfers[s].setPlaybackRate(rate));
-                showToast(`Playback Speed: ${rate}x`, '⚡');
+        if (speedSel) {
+            speedSel.onchange = e => {
+                const r = parseFloat(e.target.value);
+                STEMS.forEach(s => wavesurfers[s]?.setPlaybackRate(r));
             };
         }
 
-        // Waveform Zoom Slider
         if (zoomSlider) {
-            zoomSlider.oninput = (e) => {
-                const zoomPx = parseInt(e.target.value, 10);
-                stems.forEach(s => wavesurfers[s] && wavesurfers[s].zoom(zoomPx));
+            zoomSlider.oninput = e => {
+                const z = parseInt(e.target.value, 10);
+                STEMS.forEach(s => wavesurfers[s]?.zoom(z));
             };
         }
 
-        // Mix Presets Handlers
-        const presetKaraoke = document.getElementById('presetKaraoke');
-        const presetAcapella = document.getElementById('presetAcapella');
-        const presetDnB = document.getElementById('presetDnB');
-        const presetBacking = document.getElementById('presetBacking');
+        // Mix Presets
+        const resetMix = () => {
+            activeSoloTrack = null;
+            document.querySelectorAll('.solo-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.mute-btn').forEach(b => b.classList.remove('active'));
+            if (speedSel) speedSel.value = '1.0';
+            STEMS.forEach(s => {
+                trackStates[s] = { volume:1, muted:false, pan:0 };
+                wavesurfers[s]?.setVolume(1 * masterVolume);
+                wavesurfers[s]?.setMuted(false);
+                wavesurfers[s]?.setPlaybackRate(1.0);
+                const vol = document.querySelector(`.volume-slider[data-target="${s}"]`);
+                const pan = document.querySelector(`.pan-slider[data-target="${s}"]`);
+                const vv  = document.getElementById(`vol-val-${s}`);
+                const pv  = document.getElementById(`pan-val-${s}`);
+                if (vol) vol.value = 1;
+                if (pan) pan.value = 0;
+                if (vv)  vv.textContent = '100%';
+                if (pv)  pv.textContent = 'C';
+                if (pannerNodes[s]) pannerNodes[s].pan.value = 0;
+            });
+        };
 
-        if (presetKaraoke) {
-            presetKaraoke.onclick = () => {
-                if (resetMixerBtn) resetMixerBtn.click();
-                trackStates['vocals'].muted = true;
-                wavesurfers['vocals'] && wavesurfers['vocals'].setMuted(true);
-                const muteVocals = document.querySelector(`.mute-btn[data-target="vocals"]`);
-                if (muteVocals) muteVocals.classList.add('active');
-                showToast('Karaoke Mode (Vocals Muted)', '🎤');
-            };
-        }
+        document.getElementById('resetMixerBtn')?.addEventListener('click', () => {
+            resetMix(); showToast('Mix reset', '🔄');
+        });
 
-        if (presetAcapella) {
-            presetAcapella.onclick = () => {
-                if (resetMixerBtn) resetMixerBtn.click();
-                const soloVocals = document.querySelector(`.solo-btn[data-target="vocals"]`);
-                if (soloVocals) soloVocals.click();
-                showToast('Acapella Mode (Vocals Only)', '🎙️');
-            };
-        }
+        document.getElementById('presetKaraoke')?.addEventListener('click', () => {
+            resetMix();
+            trackStates['vocals'].muted = true;
+            wavesurfers['vocals']?.setMuted(true);
+            document.querySelector('.mute-btn[data-target="vocals"]')?.classList.add('active');
+            showToast('Karaoke — vocals muted', '🎤');
+        });
 
-        if (presetDnB) {
-            presetDnB.onclick = () => {
-                if (resetMixerBtn) resetMixerBtn.click();
-                ['vocals', 'other'].forEach(s => {
-                    trackStates[s].muted = true;
-                    wavesurfers[s] && wavesurfers[s].setMuted(true);
-                    const mBtn = document.querySelector(`.mute-btn[data-target="${s}"]`);
-                    if (mBtn) mBtn.classList.add('active');
-                });
-                showToast('Rhythm Focus Mode (Drums & Bass)', '🥁');
-            };
-        }
+        document.getElementById('presetAcapella')?.addEventListener('click', () => {
+            resetMix();
+            activeSoloTrack = 'vocals';
+            STEMS.forEach(s => { wavesurfers[s]?.setMuted(s !== 'vocals'); });
+            document.querySelector('.solo-btn[data-target="vocals"]')?.classList.add('active');
+            showToast('Acapella — vocals only', '🎙️');
+        });
 
-        if (presetBacking) {
-            presetBacking.onclick = () => {
-                if (resetMixerBtn) resetMixerBtn.click();
-                trackStates['vocals'].muted = true;
-                wavesurfers['vocals'] && wavesurfers['vocals'].setMuted(true);
-                const mBtn = document.querySelector(`.mute-btn[data-target="vocals"]`);
-                if (mBtn) mBtn.classList.add('active');
-                showToast('Instrumental Backing Track', '🎹');
-            };
-        }
+        document.getElementById('presetDnB')?.addEventListener('click', () => {
+            resetMix();
+            ['vocals','other'].forEach(s => {
+                trackStates[s].muted = true;
+                wavesurfers[s]?.setMuted(true);
+                document.querySelector(`.mute-btn[data-target="${s}"]`)?.classList.add('active');
+            });
+            showToast('Drums + Bass focus', '🥁');
+        });
 
-        // Reset Studio Mixer
-        if (resetMixerBtn) {
-            resetMixerBtn.onclick = () => {
-                activeSoloTrack = null;
-                document.querySelectorAll('.solo-btn').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.mute-btn').forEach(btn => btn.classList.remove('active'));
-                if (speedSelect) speedSelect.value = "1.0";
+        document.getElementById('presetBacking')?.addEventListener('click', () => {
+            resetMix();
+            trackStates['vocals'].muted = true;
+            wavesurfers['vocals']?.setMuted(true);
+            document.querySelector('.mute-btn[data-target="vocals"]')?.classList.add('active');
+            showToast('Instrumental backing', '🎹');
+        });
 
-                stems.forEach(s => {
-                    trackStates[s] = { volume: 1, muted: false, pan: 0 };
-                    if (wavesurfers[s]) {
-                        wavesurfers[s].setVolume(1 * masterVolume);
-                        wavesurfers[s].setMuted(false);
-                        wavesurfers[s].setPlaybackRate(1.0);
-                    }
-                    const volSlider = document.querySelector(`.volume-slider[data-target="${s}"]`);
-                    if (volSlider) volSlider.value = 1;
-                    const volVal = document.getElementById(`vol-val-${s}`);
-                    if (volVal) volVal.textContent = '100%';
-
-                    const panSlider = document.querySelector(`.pan-slider[data-target="${s}"]`);
-                    if (panSlider) panSlider.value = 0;
-                    const panVal = document.getElementById(`pan-val-${s}`);
-                    if (panVal) panVal.textContent = 'C';
-
-                    if (pannerNodes[s]) pannerNodes[s].pan.value = 0;
-                });
-
-                showToast('Mixer reset to default parameters', '🔄');
-            };
-        }
-
-        // Global Spacebar shortcut for Play/Pause
-        document.onkeydown = (e) => {
-            if (e.code === 'Space' && resultsSection && !resultsSection.classList.contains('hidden')) {
-                // Don't intercept space if user is typing in an input
-                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
+        // Spacebar shortcut
+        document.onkeydown = e => {
+            if (e.code === 'Space' && !resultsSection.classList.contains('hidden')) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
                 e.preventDefault();
-                if (playAllBtn) playAllBtn.click();
+                playBtn?.click();
             }
         };
     }
 
-    // Setup Stem Track Volume, Pan, Mute, Solo Controls (Registered ONCE)
+    // ── Stem Controls ─────────────────────────────────────────────────────────
     function setupStemControls() {
-        stems.forEach(stem => {
-            const volSlider = document.querySelector(`.volume-slider[data-target="${stem}"]`);
-            const volVal = document.getElementById(`vol-val-${stem}`);
-            const panSlider = document.querySelector(`.pan-slider[data-target="${stem}"]`);
-            const panVal = document.getElementById(`pan-val-${stem}`);
-            const muteBtn = document.querySelector(`.mute-btn[data-target="${stem}"]`);
-            const soloBtn = document.querySelector(`.solo-btn[data-target="${stem}"]`);
+        STEMS.forEach(stem => {
+            const vol    = document.querySelector(`.volume-slider[data-target="${stem}"]`);
+            const vv     = document.getElementById(`vol-val-${stem}`);
+            const pan    = document.querySelector(`.pan-slider[data-target="${stem}"]`);
+            const pv     = document.getElementById(`pan-val-${stem}`);
+            const muteB  = document.querySelector(`.mute-btn[data-target="${stem}"]`);
+            const soloB  = document.querySelector(`.solo-btn[data-target="${stem}"]`);
 
-            // Volume Control
-            if (volSlider) {
-                volSlider.oninput = (e) => {
-                    const vol = parseFloat(e.target.value);
-                    trackStates[stem].volume = vol;
-                    if (wavesurfers[stem]) {
-                        wavesurfers[stem].setVolume(vol * masterVolume);
-                    }
-                    if (volVal) volVal.textContent = `${Math.round(vol * 100)}%`;
-                    if (muteBtn) {
-                        if (vol === 0) muteBtn.classList.add('active');
-                        else if (!trackStates[stem].muted) muteBtn.classList.remove('active');
+            if (vol) {
+                vol.oninput = e => {
+                    const v = parseFloat(e.target.value);
+                    trackStates[stem].volume = v;
+                    wavesurfers[stem]?.setVolume(v * masterVolume);
+                    if (vv) vv.textContent = `${Math.round(v * 100)}%`;
+                    if (muteB) {
+                        if (v === 0) muteB.classList.add('active');
+                        else if (!trackStates[stem].muted) muteB.classList.remove('active');
                     }
                 };
             }
 
-            // Stereo Panning Control
-            if (panSlider) {
-                panSlider.oninput = (e) => {
-                    const pan = parseFloat(e.target.value);
-                    trackStates[stem].pan = pan;
-                    if (pannerNodes[stem]) {
-                        pannerNodes[stem].pan.value = pan;
-                    }
-                    if (panVal) {
-                        if (pan === 0) panVal.textContent = 'C';
-                        else if (pan < 0) panVal.textContent = `L${Math.abs(Math.round(pan * 50))}`;
-                        else panVal.textContent = `R${Math.round(pan * 50)}`;
+            if (pan) {
+                pan.oninput = e => {
+                    const p = parseFloat(e.target.value);
+                    trackStates[stem].pan = p;
+                    if (pannerNodes[stem]) pannerNodes[stem].pan.value = p;
+                    if (pv) {
+                        if (p === 0)       pv.textContent = 'C';
+                        else if (p < 0)    pv.textContent = `L${Math.abs(Math.round(p * 50))}`;
+                        else               pv.textContent = `R${Math.round(p * 50)}`;
                     }
                 };
             }
 
-            // Mute Control (Uses trackStates and ws.setMuted)
-            if (muteBtn) {
-                muteBtn.onclick = () => {
+            if (muteB) {
+                muteB.onclick = () => {
                     const ws = wavesurfers[stem];
                     if (!ws) return;
                     trackStates[stem].muted = !trackStates[stem].muted;
                     ws.setMuted(trackStates[stem].muted);
-                    muteBtn.classList.toggle('active', trackStates[stem].muted);
-                    showToast(`${stem.toUpperCase()} ${trackStates[stem].muted ? 'Muted' : 'Unmuted'}`, trackStates[stem].muted ? '🔇' : '🔊');
+                    muteB.classList.toggle('active', trackStates[stem].muted);
+                    showToast(`${stem.toUpperCase()} ${trackStates[stem].muted ? 'muted' : 'unmuted'}`, trackStates[stem].muted ? '🔇' : '🔊');
                 };
             }
 
-            // Solo Control (Isolates selected stem)
-            if (soloBtn) {
-                soloBtn.onclick = () => {
-                    const isCurrentlySolo = (activeSoloTrack === stem);
-
-                    if (isCurrentlySolo) {
+            if (soloB) {
+                soloB.onclick = () => {
+                    const isSolo = activeSoloTrack === stem;
+                    if (isSolo) {
                         activeSoloTrack = null;
-                        soloBtn.classList.remove('active');
-                        stems.forEach(s => {
-                            if (wavesurfers[s]) {
-                                wavesurfers[s].setMuted(trackStates[s].muted);
-                            }
-                        });
-                        showToast('Solo mode disabled', '🎧');
+                        soloB.classList.remove('active');
+                        STEMS.forEach(s => wavesurfers[s]?.setMuted(trackStates[s].muted));
+                        showToast('Solo off', '🎧');
                     } else {
                         activeSoloTrack = stem;
-                        document.querySelectorAll('.solo-btn').forEach(btn => btn.classList.remove('active'));
-                        soloBtn.classList.add('active');
-
-                        stems.forEach(s => {
-                            if (wavesurfers[s]) {
-                                wavesurfers[s].setMuted(s !== stem);
-                            }
-                        });
+                        document.querySelectorAll('.solo-btn').forEach(b => b.classList.remove('active'));
+                        soloB.classList.add('active');
+                        STEMS.forEach(s => wavesurfers[s]?.setMuted(s !== stem));
                         showToast(`Solo: ${stem.toUpperCase()}`, '🎧');
                     }
                 };
@@ -860,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initialize Global Controls
+    // ── Boot ──────────────────────────────────────────────────────────────────
     setupMasterControls();
     setupStemControls();
 });

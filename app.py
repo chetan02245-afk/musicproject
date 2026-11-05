@@ -53,15 +53,25 @@ def sanitize_track_name(filename):
     return sanitized or f"track_{uuid.uuid4().hex[:8]}"
 
 def get_cached_separator(model_name='htdemucs', mode='fast'):
-    """Returns an in-memory cached Separator instance, eliminating cold-start latency."""
-    # Fast mode skips time shifts and uses slight overlap reduction for a 40%+ speed boost
-    shifts = 0 if mode == 'fast' else 1
-    overlap = 0.15 if mode == 'fast' else 0.25
+    """Returns an in-memory cached Separator instance, eliminating cold-start latency.
+
+    Mode mapping:
+      fast     → htdemucs,    shifts=0, overlap=0.15  (fastest, good quality)
+      balanced → htdemucs,    shifts=2, overlap=0.25  (2 time-shifts, better clarity)
+      quality  → htdemucs_ft, shifts=4, overlap=0.25  (fine-tuned, best stem clarity)
+    """
+    if mode == 'quality':
+        shifts, overlap = 4, 0.25
+    elif mode == 'balanced':
+        shifts, overlap = 2, 0.25
+    else:  # fast
+        shifts, overlap = 0, 0.15
+
     key = (model_name, shifts, overlap)
-    
+
     with _MODEL_LOCK:
         if key not in _MODEL_CACHE:
-            print(f"[ModelManager] Warming up Demucs model: {model_name} (shifts={shifts}, overlap={overlap})...")
+            print(f"[ModelManager] Loading Demucs model: {model_name} (shifts={shifts}, overlap={overlap})...")
             separator = Separator(
                 model=model_name,
                 shifts=shifts,
@@ -100,12 +110,12 @@ def load_audio_to_tensor(filepath):
         tensor = torch.from_numpy(arr.copy()).t().contiguous()
         return tensor, 44100
 
-def save_stem_pcm(tensor, out_path, samplerate=44100):
-    """Saves tensor (channels, samples) as 16-bit PCM WAV.
-    Provides standard DAW-ready quality, half the disk footprint,
-    and 2x faster browser loading compared to 32-bit float."""
-    data = tensor.t().clamp(-1.0, 1.0).cpu().numpy()
-    sf.write(out_path, data, samplerate, subtype='PCM_16')
+def save_stem_float32(tensor, out_path, samplerate=44100):
+    """Saves tensor (channels, samples) as 32-bit float WAV.
+    Preserves full dynamic range from the AI model — no quantization noise.
+    This is the highest quality possible for audio stem files."""
+    data = tensor.t().cpu().numpy()
+    sf.write(out_path, data, samplerate, subtype='FLOAT')
 
 def process_separation_job(job_id, filename, mode):
     try:
@@ -113,7 +123,8 @@ def process_separation_job(job_id, filename, mode):
         jobs[job_id]['progress'] = 5
         jobs[job_id]['message'] = 'Analyzing audio source...'
 
-        model = 'htdemucs_ft' if mode == 'quality' else 'htdemucs'
+        # quality & balanced both use the fine-tuned model for best stem clarity
+        model = 'htdemucs_ft' if mode in ('quality', 'balanced') else 'htdemucs'
         base_name = sanitize_track_name(filename)
         out_dir = os.path.join(app.config['OUTPUT_FOLDER'], model, base_name)
         stem_files = ['vocals.wav', 'drums.wav', 'bass.wav', 'other.wav']
@@ -190,7 +201,7 @@ def process_separation_job(job_id, filename, mode):
         for stem_name in ['vocals', 'drums', 'bass', 'other']:
             if stem_name in stems:
                 out_path = os.path.join(out_dir, f"{stem_name}.wav")
-                save_stem_pcm(stems[stem_name], out_path, samplerate=separator.samplerate)
+                save_stem_float32(stems[stem_name], out_path, samplerate=separator.samplerate)
 
         quoted_base = urllib.parse.quote(base_name)
         jobs[job_id]['progress'] = 100
@@ -357,11 +368,17 @@ def download_zip(model, track):
     )
 
 def warmup_model():
-    """Asynchronously warm up default model into memory on boot."""
+    """Asynchronously warm up both the fast model and fine-tuned quality model on boot."""
     try:
         get_cached_separator(model_name='htdemucs', mode='fast')
+        print("[ModelManager] htdemucs fast model warmed up.")
     except Exception as e:
-        print("[ModelManager] Model warmup notice:", e)
+        print("[ModelManager] htdemucs warmup notice:", e)
+    try:
+        get_cached_separator(model_name='htdemucs_ft', mode='balanced')
+        print("[ModelManager] htdemucs_ft balanced model warmed up.")
+    except Exception as e:
+        print("[ModelManager] htdemucs_ft warmup notice:", e)
 
 if __name__ == '__main__':
     # Start model warmup in background thread

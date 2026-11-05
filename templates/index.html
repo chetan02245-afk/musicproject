@@ -3,386 +3,321 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SonicSplit Studio - Professional AI Audio Stem Separation</title>
-    <!-- Google Fonts: Inter & JetBrains Mono -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- CSS -->
+    <title>SonicSplit — AI Stem Separation Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
-    <!-- WaveSurfer.js 7 -->
     <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
 </head>
 <body>
-    <!-- Frosted Ambient Background Elements -->
-    <div class="background-elements">
-        <div class="ambient-glow glow-1"></div>
-        <div class="ambient-glow glow-2"></div>
-        <div class="grid-pattern"></div>
+
+    <!-- Animated Background -->
+    <div class="bg-layer">
+        <div class="bg-orb orb-1"></div>
+        <div class="bg-orb orb-2"></div>
+        <div class="bg-orb orb-3"></div>
+        <div class="bg-grid"></div>
+        <div class="bg-noise"></div>
     </div>
 
-    <!-- System Toast Notification -->
+    <!-- Toast -->
     <div id="toast" class="toast hidden">
-        <span id="toastIcon" class="toast-icon">✨</span>
-        <span id="toastMessage">SonicSplit Studio Engine Ready</span>
+        <span id="toastIcon">✨</span>
+        <span id="toastMessage">Studio ready</span>
     </div>
 
-    <div class="studio-wrapper">
-        <!-- Senior Software Engineer Glassmorphic Header -->
-        <header class="studio-header fade-in">
-            <div class="brand-container">
-                <div class="brand-logo">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 18V5l12-2v13"></path>
-                        <circle cx="6" cy="18" r="3"></circle>
-                        <circle cx="18" cy="16" r="3"></circle>
+    <div class="app">
+
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-brand">
+                <div class="logo-mark">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
                     </svg>
                 </div>
-                <div>
-                    <div class="brand-title-row">
-                        <h1>SonicSplit <span class="version-badge">PRO v2.4</span></h1>
-                    </div>
-                    <p class="brand-tagline">Demucs HT AI Source Separation & Interactive DAW Studio</p>
+                <div class="brand-text">
+                    <h1>SonicSplit <span class="badge">AI</span></h1>
+                    <p>Demucs Neural Source Separation Studio</p>
                 </div>
             </div>
-
-            <div class="header-tools">
-                <div class="telemetry-badge">
-                    <span class="status-indicator online"></span> Engine Ready
-                </div>
-                <button id="headerDemoBtn" class="btn secondary-btn small-btn">
-                    ⚡ Try Demo Track
-                </button>
+            <div class="header-status">
+                <span class="dot online"></span>
+                <span>Engine Online</span>
             </div>
         </header>
 
-        <main>
-            <!-- Functional Interactive Studio Tools Section -->
-            <section class="tools-bar-section fade-in" id="toolsSection">
-                <!-- Tool Card 1: Mix Isolation Presets -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <span class="tool-icon">🎧</span>
-                        <h3>Mix Presets</h3>
+        <!-- UPLOAD SECTION -->
+        <section id="uploadSection" class="section">
+
+            <!-- Input Tabs -->
+            <div class="tab-row">
+                <button id="tabFileBtn" class="tab active">📁 Upload File</button>
+                <button id="tabUrlBtn" class="tab">🔗 From URL</button>
+            </div>
+
+            <!-- Drop Zone -->
+            <div id="dragArea" class="dropzone">
+                <div class="dropzone-visual">
+                    <div class="vinyl">
+                        <div class="vinyl-inner"></div>
                     </div>
-                    <p class="tool-desc">Instant one-click stem isolation profiles for practice and remixing.</p>
-                    <div class="tool-actions-grid">
-                        <button class="preset-pill-btn" id="presetKaraoke">🎤 Karaoke</button>
-                        <button class="preset-pill-btn" id="presetAcapella">🎙️ Acapella</button>
-                        <button class="preset-pill-btn" id="presetDnB">🥁 Rhythm Focus</button>
-                        <button class="preset-pill-btn" id="presetBacking">🎹 Instrumental</button>
+                    <div class="soundbars">
+                        <span></span><span></span><span></span><span></span><span></span>
                     </div>
                 </div>
+                <div class="dropzone-text">
+                    <h2>Drop Your Audio Here</h2>
+                    <p>MP3 · WAV · FLAC · M4A · OGG · AAC &nbsp;•&nbsp; up to 150 MB</p>
+                </div>
+                <button class="btn-primary" id="browseBtn">Browse Files</button>
+                <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.flac,.m4a,.aac,.ogg" hidden>
+            </div>
 
-                <!-- Tool Card 2: Engine Mode -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <span class="tool-icon">🎛️</span>
-                        <h3>AI Engine Mode</h3>
-                    </div>
-                    <p class="tool-desc">Select speed vs precision model parameters for demixing.</p>
-                    <div class="tool-select-wrapper">
-                        <select id="modeSelect" class="custom-select">
-                            <option value="fast" selected>⚡ Turbo Fast (htdemucs) - Zero-Shift Optimized (~2-3x Faster)</option>
-                            <option value="balanced">⚖️ Balanced (htdemucs) - Standard 1-Shift</option>
-                            <option value="quality">🎯 Studio Quality (htdemucs_ft) - Multi-pass Fine-Tuned</option>
+            <!-- URL Input -->
+            <div id="urlInputContainer" class="url-zone hidden">
+                <div class="url-icon">🔗</div>
+                <h2>Fetch Audio From Link</h2>
+                <p>Enter a direct MP3, WAV, or audio stream URL</p>
+                <div class="url-row">
+                    <input type="url" id="urlInput" class="url-field" placeholder="https://example.com/track.mp3">
+                    <button class="btn-primary" id="fetchUrlBtn">Fetch</button>
+                </div>
+            </div>
+
+            <!-- File Card -->
+            <div id="fileInspector" class="file-card hidden">
+                <div class="file-card-icon">🎵</div>
+                <div class="file-card-info">
+                    <div id="fileNameDisplay" class="file-name">track.mp3</div>
+                    <div id="fileDetailsDisplay" class="file-meta">— MB · Audio</div>
+                </div>
+                <button class="clear-btn" id="clearFileBtn" title="Remove">✕</button>
+            </div>
+
+            <!-- Mode + Start -->
+            <div class="start-row">
+                <div class="mode-wrap">
+                    <label class="mode-label">AI Quality</label>
+                    <select id="modeSelect" class="mode-select">
+                        <option value="fast">⚡ Fast  (htdemucs)</option>
+                        <option value="balanced" selected>🎯 Balanced  (htdemucs_ft)</option>
+                        <option value="quality">💎 Studio  (htdemucs_ft · 4-shifts)</option>
+                    </select>
+                </div>
+                <button id="processBtn" class="btn-start" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Start Separation
+                </button>
+            </div>
+        </section>
+
+        <!-- PROGRESS SECTION -->
+        <section id="loadingSection" class="section hidden">
+            <div class="progress-wrap">
+                <div class="spin-ring">
+                    <svg viewBox="0 0 36 36" class="spin-svg">
+                        <path class="spin-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path class="spin-arc" id="progressArc" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    </svg>
+                    <span id="progressPercent" class="spin-pct">0%</span>
+                </div>
+                <div class="progress-info">
+                    <h3 id="loadingStatusTitle">Preparing audio…</h3>
+                    <p id="loadingStatusSub">Demucs AI is isolating your stems.</p>
+                </div>
+            </div>
+            <div class="prog-bar-track">
+                <div class="prog-bar-fill" id="progressBarFill"></div>
+            </div>
+            <div class="steps">
+                <div class="step" id="stage1"><span class="step-dot"></span>Upload</div>
+                <div class="step" id="stage2"><span class="step-dot"></span>Decode</div>
+                <div class="step" id="stage3"><span class="step-dot"></span>AI Split</div>
+                <div class="step" id="stage4"><span class="step-dot"></span>Export</div>
+            </div>
+        </section>
+
+        <!-- STUDIO SECTION -->
+        <section id="resultsSection" class="section hidden">
+
+            <!-- Studio Topbar -->
+            <div class="studio-top">
+                <div>
+                    <h2 class="studio-title">Studio Rack</h2>
+                    <span id="currentTrackTitle" class="studio-track">No track loaded</span>
+                </div>
+                <div class="studio-top-actions">
+                    <button id="downloadZipBtn" class="btn-primary">📦 Export ZIP</button>
+                    <button id="newSongBtn" class="btn-secondary">＋ New Track</button>
+                </div>
+            </div>
+
+            <!-- Mix Presets -->
+            <div class="presets-row">
+                <button class="preset-btn" id="presetKaraoke">🎤 Karaoke</button>
+                <button class="preset-btn" id="presetAcapella">🎙️ Acapella</button>
+                <button class="preset-btn" id="presetDnB">🥁 Drums+Bass</button>
+                <button class="preset-btn" id="presetBacking">🎹 Instrumental</button>
+                <button class="preset-btn reset" id="resetMixerBtn">🔄 Reset Mix</button>
+            </div>
+
+            <!-- Transport Bar -->
+            <div class="transport">
+                <div class="transport-left">
+                    <button id="playAllBtn" class="play-btn" title="Play/Pause (Space)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span>Play</span>
+                    </button>
+                    <button id="stopAllBtn" class="icon-btn" title="Stop">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    </button>
+                    <button id="loopBtn" class="icon-btn" title="Loop">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                    </button>
+                </div>
+                <div class="transport-mid">
+                    <span id="currentTimeDisplay" class="timecode">00:00</span>
+                    <input type="range" id="masterSeekBar" class="seekbar" min="0" max="100" value="0" step="0.1">
+                    <span id="totalDurationDisplay" class="timecode">00:00</span>
+                </div>
+                <div class="transport-right">
+                    <div class="ctrl-chip">
+                        <span>SPEED</span>
+                        <select id="speedSelect" class="chip-select">
+                            <option value="0.5">0.5×</option>
+                            <option value="0.75">0.75×</option>
+                            <option value="1.0" selected>1×</option>
+                            <option value="1.25">1.25×</option>
+                            <option value="1.5">1.5×</option>
                         </select>
                     </div>
-                </div>
-
-                <!-- Tool Card 3: Batch Export -->
-                <div class="tool-card">
-                    <div class="tool-card-header">
-                        <span class="tool-icon">📦</span>
-                        <h3>Export Studio</h3>
+                    <div class="ctrl-chip">
+                        <span>VOL</span>
+                        <input type="range" id="masterVolumeSlider" class="chip-slider" min="0" max="1" step="0.01" value="1">
                     </div>
-                    <p class="tool-desc">Bundle isolated stems into studio-grade uncompressed archives.</p>
-                    <div class="tool-export-box">
-                        <button id="downloadZipBtnHeader" class="btn primary-action-btn full-width">
-                            ⚡ Download ZIP Bundle
-                        </button>
+                    <div class="ctrl-chip">
+                        <span>ZOOM</span>
+                        <input type="range" id="zoomSlider" class="chip-slider" min="10" max="200" step="5" value="20">
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- Upload Dropzone Card -->
-            <section class="card upload-section fade-in" id="uploadSection">
-                <div class="upload-tabs">
-                    <button class="upload-tab-btn active" id="tabFileBtn" type="button">📁 Local Audio File</button>
-                    <button class="upload-tab-btn" id="tabUrlBtn" type="button">🔗 Fetch From URL</button>
-                </div>
+            <!-- Stem Tracks -->
+            <div class="rack" id="stemRack">
 
-                <!-- Drag & Drop Container -->
-                <div class="drag-area" id="dragArea">
-                    <div class="drop-icon-container">
-                        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
-                            <path d="M12 12v9"></path>
-                            <path d="m16 16-4-4-4 4"></path>
-                        </svg>
-                    </div>
-                    <h2>Drag & Drop Audio File</h2>
-                    <p class="drag-hint">Supports MP3, WAV, FLAC, M4A, OGG, AAC up to 150MB</p>
-                    
-                    <div class="upload-buttons-row">
-                        <button class="btn secondary-btn" type="button" id="browseBtn">
-                            📂 Browse Files
-                        </button>
-                        <button class="btn accent-btn" type="button" id="demoAudioBtn">
-                            ⚡ Load Demo Track
-                        </button>
-                    </div>
-                    <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.flac,.m4a,.aac,.ogg" hidden>
-                </div>
-
-                <!-- URL Fetch Container -->
-                <div class="url-input-card hidden" id="urlInputContainer">
-                    <div class="drop-icon-container">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                        </svg>
-                    </div>
-                    <h2>Fetch Audio From Link</h2>
-                    <p class="drag-hint">Enter direct MP3, WAV, or audio link</p>
-                    <div class="url-input-group">
-                        <input type="url" id="urlInput" class="url-input-field" placeholder="https://example.com/audio/track.mp3">
-                        <button class="btn accent-btn" id="fetchUrlBtn" type="button">⚡ Fetch Audio</button>
-                    </div>
-                </div>
-
-                <!-- File Inspector Info Panel -->
-                <div id="fileInspector" class="file-inspector hidden">
-                    <div class="file-info-block">
-                        <div class="file-badge-icon">🎵</div>
-                        <div>
-                            <div class="file-title" id="fileNameDisplay">track_audio.mp3</div>
-                            <div class="file-subtext" id="fileDetailsDisplay">3.4 MB • MP3 Audio Format</div>
+                <!-- VOCALS -->
+                <div class="track" id="track-vocals">
+                    <div class="track-head vocals-head">
+                        <div class="track-label">
+                            <span class="stem-icon">🎤</span>
+                            <span class="stem-name">VOCALS</span>
+                        </div>
+                        <div class="track-ctrls">
+                            <div class="knob-group">
+                                <span class="knob-label">PAN</span>
+                                <input type="range" class="pan-slider" data-target="vocals" min="-1" max="1" step="0.05" value="0">
+                                <span class="knob-val" id="pan-val-vocals">C</span>
+                            </div>
+                            <button class="ms-btn mute-btn" data-target="vocals">M</button>
+                            <button class="ms-btn solo-btn" data-target="vocals">S</button>
+                            <div class="knob-group">
+                                <input type="range" class="volume-slider" data-target="vocals" min="0" max="1" step="0.01" value="1">
+                                <span class="knob-val" id="vol-val-vocals">100%</span>
+                            </div>
+                            <a id="download-vocals" class="dl-btn" download title="Download Vocals">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
                         </div>
                     </div>
-                    <button class="icon-only-btn" id="clearFileBtn" title="Remove File">✕</button>
+                    <div class="waveform" id="waveform-vocals"></div>
                 </div>
 
-                <button id="processBtn" class="btn primary-action-btn run-btn" disabled>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                    Start AI Stem Separation
-                </button>
-            </section>
-
-            <!-- Real-Time Background Loader -->
-            <section class="card loading-section hidden" id="loadingSection">
-                <div class="radar-container">
-                    <div class="radar-ring"></div>
-                    <div class="radar-percent" id="progressPercent">0%</div>
+                <!-- DRUMS -->
+                <div class="track" id="track-drums">
+                    <div class="track-head drums-head">
+                        <div class="track-label">
+                            <span class="stem-icon">🥁</span>
+                            <span class="stem-name">DRUMS</span>
+                        </div>
+                        <div class="track-ctrls">
+                            <div class="knob-group">
+                                <span class="knob-label">PAN</span>
+                                <input type="range" class="pan-slider" data-target="drums" min="-1" max="1" step="0.05" value="0">
+                                <span class="knob-val" id="pan-val-drums">C</span>
+                            </div>
+                            <button class="ms-btn mute-btn" data-target="drums">M</button>
+                            <button class="ms-btn solo-btn" data-target="drums">S</button>
+                            <div class="knob-group">
+                                <input type="range" class="volume-slider" data-target="drums" min="0" max="1" step="0.01" value="1">
+                                <span class="knob-val" id="vol-val-drums">100%</span>
+                            </div>
+                            <a id="download-drums" class="dl-btn" download title="Download Drums">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="waveform" id="waveform-drums"></div>
                 </div>
 
-                <h3 id="loadingStatusTitle">Analyzing Spectrogram Frequencies...</h3>
-                <p class="loading-desc" id="loadingStatusSub">Demucs Neural Network is splitting audio into isolated stem channels.</p>
-
-                <div class="progress-bar-track">
-                    <div class="progress-bar-glow" id="progressBarFill"></div>
+                <!-- BASS -->
+                <div class="track" id="track-bass">
+                    <div class="track-head bass-head">
+                        <div class="track-label">
+                            <span class="stem-icon">🎸</span>
+                            <span class="stem-name">BASS</span>
+                        </div>
+                        <div class="track-ctrls">
+                            <div class="knob-group">
+                                <span class="knob-label">PAN</span>
+                                <input type="range" class="pan-slider" data-target="bass" min="-1" max="1" step="0.05" value="0">
+                                <span class="knob-val" id="pan-val-bass">C</span>
+                            </div>
+                            <button class="ms-btn mute-btn" data-target="bass">M</button>
+                            <button class="ms-btn solo-btn" data-target="bass">S</button>
+                            <div class="knob-group">
+                                <input type="range" class="volume-slider" data-target="bass" min="0" max="1" step="0.01" value="1">
+                                <span class="knob-val" id="vol-val-bass">100%</span>
+                            </div>
+                            <a id="download-bass" class="dl-btn" download title="Download Bass">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="waveform" id="waveform-bass"></div>
                 </div>
 
-                <div class="stage-steps">
-                    <div class="step-chip completed" id="stage1"><span class="step-dot"></span> Upload</div>
-                    <div class="step-chip" id="stage2"><span class="step-dot"></span> Format WAV</div>
-                    <div class="step-chip" id="stage3"><span class="step-dot"></span> AI Isolation</div>
-                    <div class="step-chip" id="stage4"><span class="step-dot"></span> DAW Render</div>
-                </div>
-            </section>
-
-            <!-- Multi-Track DAW Remix Studio Results Section -->
-            <section class="card studio-section hidden" id="resultsSection">
-                <!-- Studio Header Bar -->
-                <div class="studio-section-header">
-                    <div>
-                        <h2>Remix Studio Rack</h2>
-                        <span class="active-track-name" id="currentTrackTitle">Active Track: song_track.mp3</span>
-                    </div>
-                    
-                    <div class="studio-header-actions">
-                        <button id="downloadZipBtn" class="btn primary-action-btn">
-                            📥 Download ZIP Bundle
-                        </button>
-                        <button id="newSongBtn" class="btn secondary-btn">
-                            + New Track
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Master DAW Transport Controls Bar -->
-                <div class="master-transport-panel">
-                    <div class="transport-left">
-                        <button id="playAllBtn" class="btn play-master-btn" title="Play/Pause (Spacebar)">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                            <span>Play</span>
-                        </button>
-                        <button id="stopAllBtn" class="btn transport-btn" title="Stop All">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
-                        </button>
-                        <button id="loopBtn" class="btn transport-btn" title="Toggle Loop">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-                        </button>
-                    </div>
-
-                    <!-- Seekbar & Time Readout -->
-                    <div class="transport-middle">
-                        <span id="currentTimeDisplay" class="time-code">00:00</span>
-                        <input type="range" id="masterSeekBar" class="seek-slider" min="0" max="100" value="0" step="0.1">
-                        <span id="totalDurationDisplay" class="time-code">00:00</span>
-                    </div>
-
-                    <!-- Right Controls: Speed, Volume, Zoom, Reset -->
-                    <div class="transport-right">
-                        <div class="ctrl-group" title="Playback Speed">
-                            <span class="ctrl-tag">SPEED</span>
-                            <select id="speedSelect" class="mini-select">
-                                <option value="0.5">0.5x</option>
-                                <option value="0.75">0.75x</option>
-                                <option value="1.0" selected>1.0x</option>
-                                <option value="1.25">1.25x</option>
-                                <option value="1.5">1.5x</option>
-                            </select>
+                <!-- OTHER -->
+                <div class="track" id="track-other">
+                    <div class="track-head other-head">
+                        <div class="track-label">
+                            <span class="stem-icon">🎹</span>
+                            <span class="stem-name">MELODY</span>
                         </div>
-                        <div class="ctrl-group" title="Master Volume">
-                            <span class="ctrl-tag">VOL</span>
-                            <input type="range" id="masterVolumeSlider" class="mini-slider" min="0" max="1" step="0.01" value="1">
+                        <div class="track-ctrls">
+                            <div class="knob-group">
+                                <span class="knob-label">PAN</span>
+                                <input type="range" class="pan-slider" data-target="other" min="-1" max="1" step="0.05" value="0">
+                                <span class="knob-val" id="pan-val-other">C</span>
+                            </div>
+                            <button class="ms-btn mute-btn" data-target="other">M</button>
+                            <button class="ms-btn solo-btn" data-target="other">S</button>
+                            <div class="knob-group">
+                                <input type="range" class="volume-slider" data-target="other" min="0" max="1" step="0.01" value="1">
+                                <span class="knob-val" id="vol-val-other">100%</span>
+                            </div>
+                            <a id="download-other" class="dl-btn" download title="Download Melody">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
                         </div>
-                        <div class="ctrl-group" title="Waveform Zoom">
-                            <span class="ctrl-tag">ZOOM</span>
-                            <input type="range" id="zoomSlider" class="mini-slider" min="10" max="200" step="5" value="20">
-                        </div>
-                        <button id="resetMixerBtn" class="btn secondary-btn tiny-btn" title="Reset Mixer">
-                            🔄 Reset
-                        </button>
                     </div>
+                    <div class="waveform" id="waveform-other"></div>
                 </div>
 
-                <!-- Multi-Track Stem Racks -->
-                <div class="stems-rack">
-                    <!-- Vocals Track -->
-                    <div class="track-row" id="track-vocals">
-                        <div class="track-strip vocals-strip">
-                            <div class="track-title-block">
-                                <span class="track-label vocals-label">🎤 VOCALS</span>
-                            </div>
+            </div><!-- /rack -->
+        </section>
 
-                            <div class="track-controls-cluster">
-                                <div class="pan-container" title="Stereo Pan (L - C - R)">
-                                    <span class="pan-tag">PAN</span>
-                                    <input type="range" class="pan-slider" data-target="vocals" min="-1" max="1" step="0.05" value="0">
-                                    <span class="pan-val" id="pan-val-vocals">C</span>
-                                </div>
+    </div><!-- /app -->
 
-                                <button class="track-btn mute-btn" data-target="vocals" title="Mute Vocals (M)">M</button>
-                                <button class="track-btn solo-btn" data-target="vocals" title="Solo Vocals (S)">S</button>
-
-                                <div class="vol-container" title="Stem Volume">
-                                    <input type="range" class="volume-slider" data-target="vocals" min="0" max="1" step="0.01" value="1">
-                                    <span class="vol-val" id="vol-val-vocals">100%</span>
-                                </div>
-
-                                <a id="download-vocals" class="track-btn download-btn" download title="Download Vocals WAV">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                </a>
-                            </div>
-                        </div>
-                        <div class="waveform-box" id="waveform-vocals"></div>
-                    </div>
-
-                    <!-- Drums Track -->
-                    <div class="track-row" id="track-drums">
-                        <div class="track-strip drums-strip">
-                            <div class="track-title-block">
-                                <span class="track-label drums-label">🥁 DRUMS</span>
-                            </div>
-
-                            <div class="track-controls-cluster">
-                                <div class="pan-container" title="Stereo Pan (L - C - R)">
-                                    <span class="pan-tag">PAN</span>
-                                    <input type="range" class="pan-slider" data-target="drums" min="-1" max="1" step="0.05" value="0">
-                                    <span class="pan-val" id="pan-val-drums">C</span>
-                                </div>
-
-                                <button class="track-btn mute-btn" data-target="drums" title="Mute Drums (M)">M</button>
-                                <button class="track-btn solo-btn" data-target="drums" title="Solo Drums (S)">S</button>
-
-                                <div class="vol-container" title="Stem Volume">
-                                    <input type="range" class="volume-slider" data-target="drums" min="0" max="1" step="0.01" value="1">
-                                    <span class="vol-val" id="vol-val-drums">100%</span>
-                                </div>
-
-                                <a id="download-drums" class="track-btn download-btn" download title="Download Drums WAV">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                </a>
-                            </div>
-                        </div>
-                        <div class="waveform-box" id="waveform-drums"></div>
-                    </div>
-
-                    <!-- Bass Track -->
-                    <div class="track-row" id="track-bass">
-                        <div class="track-strip bass-strip">
-                            <div class="track-title-block">
-                                <span class="track-label bass-label">🎸 BASS</span>
-                            </div>
-
-                            <div class="track-controls-cluster">
-                                <div class="pan-container" title="Stereo Pan (L - C - R)">
-                                    <span class="pan-tag">PAN</span>
-                                    <input type="range" class="pan-slider" data-target="bass" min="-1" max="1" step="0.05" value="0">
-                                    <span class="pan-val" id="pan-val-bass">C</span>
-                                </div>
-
-                                <button class="track-btn mute-btn" data-target="bass" title="Mute Bass (M)">M</button>
-                                <button class="track-btn solo-btn" data-target="bass" title="Solo Bass (S)">S</button>
-
-                                <div class="vol-container" title="Stem Volume">
-                                    <input type="range" class="volume-slider" data-target="bass" min="0" max="1" step="0.01" value="1">
-                                    <span class="vol-val" id="vol-val-bass">100%</span>
-                                </div>
-
-                                <a id="download-bass" class="track-btn download-btn" download title="Download Bass WAV">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                </a>
-                            </div>
-                        </div>
-                        <div class="waveform-box" id="waveform-bass"></div>
-                    </div>
-
-                    <!-- Other Track -->
-                    <div class="track-row" id="track-other">
-                        <div class="track-strip other-strip">
-                            <div class="track-title-block">
-                                <span class="track-label other-label">🎹 OTHER</span>
-                            </div>
-
-                            <div class="track-controls-cluster">
-                                <div class="pan-container" title="Stereo Pan (L - C - R)">
-                                    <span class="pan-tag">PAN</span>
-                                    <input type="range" class="pan-slider" data-target="other" min="-1" max="1" step="0.05" value="0">
-                                    <span class="pan-val" id="pan-val-other">C</span>
-                                </div>
-
-                                <button class="track-btn mute-btn" data-target="other" title="Mute Other (M)">M</button>
-                                <button class="track-btn solo-btn" data-target="other" title="Solo Other (S)">S</button>
-
-                                <div class="vol-container" title="Stem Volume">
-                                    <input type="range" class="volume-slider" data-target="other" min="0" max="1" step="0.01" value="1">
-                                    <span class="vol-val" id="vol-val-other">100%</span>
-                                </div>
-
-                                <a id="download-other" class="track-btn download-btn" download title="Download Other WAV">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                </a>
-                            </div>
-                        </div>
-                        <div class="waveform-box" id="waveform-other"></div>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- Script -->
     <script src="/static/script.js"></script>
 </body>
 </html>
