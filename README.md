@@ -4,13 +4,15 @@ This project is a powerful, local web application that separates mixed audio fil
 
 ## 🌟 Features
 - **High-Quality Separation**: Uses `htdemucs` and `htdemucs_ft` models.
+- **In-Memory AI Acceleration**: Pre-warmed model caching and zero-subprocess execution for immediate demixing without cold-start latency.
+- **Turbo Fast Mode**: Zero-shift accelerated inference for 2-3x faster demixing on CPUs and laptops.
+- **Versatile Audio Ingestion**: Supports local file drag-and-drop (MP3, WAV, FLAC, M4A, OGG, AAC) and direct audio URL fetching.
 - **Premium UI**: Modern dark mode with glassmorphism, smooth animations, and a responsive layout.
 - **Interactive Remix Studio**: 
-  - Dynamic Waveform and Spectrogram visualization for each stem.
-  - Individual stem volume controls, mute, and solo (Karaoke mode).
-  - Sync playback across all separated tracks.
-- **Performance Modes**: Choose between 'Fast' (better for standard laptops) or 'High Quality'.
-- **Downloadable Stems**: Download individual instruments to use in your DAWs.
+  - Dynamic Waveform visualization for each stem using WaveSurfer.js.
+  - Individual stem volume controls, stereo panning, mute, and solo (Karaoke & Acapella modes).
+  - Synchronized transport playback, seeking, loop, and speed controls across all tracks.
+- **Downloadable Stems**: Download individual 16-bit PCM WAV tracks or full ZIP archives for DAWs (Ableton, FL Studio, Logic Pro).
 
 ## 🛠️ Tech Stack
 - **Backend**: Python, Flask, PyTorch, Demucs
@@ -42,11 +44,11 @@ http://127.0.0.1:5000
 ```
 
 ## 🧠 How it Works
-1. **Upload**: The user uploads an audio track via the UI.
-2. **Backend Processing**: Flask receives the file and triggers the Demucs model via a subprocess.
-3. **AI Separation**: Demucs analyzes the spectrograms of the audio and uses a Hybrid Transformer architecture to isolate frequency patterns belonging to vocals, drums, bass, and other instruments.
-4. **Output**: The separated stems are saved locally in the `outputs/` folder.
-5. **Visualization & Playback**: The frontend fetches these stems, visualizes their waveforms/spectrograms using Wavesurfer.js, and provides an interactive mixer.
+1. **Upload or Fetch**: The user uploads an audio track via drag-and-drop or enters a direct audio URL.
+2. **In-Memory Decoding**: Audio is decoded directly into memory tensors using native libsndfile or FFmpeg streaming without writing redundant multi-megabyte temporary WAV files.
+3. **AI Separation**: Demucs analyzes the spectrograms of the audio using a Hybrid Transformer architecture (`htdemucs`) to isolate vocals, drums, bass, and other instruments.
+4. **Optimized Output**: Stems are saved as studio-grade 16-bit PCM WAV files, cutting file sizes and download latencies by 50%.
+5. **Interactive DAW Studio**: The frontend fetches stems with HTTP Range request support, visualizes waveforms via WaveSurfer.js, and provides synchronous playback, presets, solo/mute, and volume/pan controls.
 
 ## ⚠️ Notes for Laptops
 Processing full songs on a CPU can take a few minutes. For a faster experience during demonstrations, select the "Fast" mode in the dropdown, or use shorter audio clips (e.g., 30-60 seconds).

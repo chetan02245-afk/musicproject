@@ -81,7 +81,8 @@
                     <p class="tool-desc">Select speed vs precision model parameters for demixing.</p>
                     <div class="tool-select-wrapper">
                         <select id="modeSelect" class="custom-select">
-                            <option value="fast" selected>⚡ Fast Mode (htdemucs) - 1-Shift Accelerated</option>
+                            <option value="fast" selected>⚡ Turbo Fast (htdemucs) - Zero-Shift Optimized (~2-3x Faster)</option>
+                            <option value="balanced">⚖️ Balanced (htdemucs) - Standard 1-Shift</option>
                             <option value="quality">🎯 Studio Quality (htdemucs_ft) - Multi-pass Fine-Tuned</option>
                         </select>
                     </div>
@@ -104,6 +105,12 @@
 
             <!-- Upload Dropzone Card -->
             <section class="card upload-section fade-in" id="uploadSection">
+                <div class="upload-tabs">
+                    <button class="upload-tab-btn active" id="tabFileBtn" type="button">📁 Local Audio File</button>
+                    <button class="upload-tab-btn" id="tabUrlBtn" type="button">🔗 Fetch From URL</button>
+                </div>
+
+                <!-- Drag & Drop Container -->
                 <div class="drag-area" id="dragArea">
                     <div class="drop-icon-container">
                         <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -113,17 +120,33 @@
                         </svg>
                     </div>
                     <h2>Drag & Drop Audio File</h2>
-                    <p class="drag-hint">Supports MP3, WAV, FLAC, M4A up to 100MB</p>
+                    <p class="drag-hint">Supports MP3, WAV, FLAC, M4A, OGG, AAC up to 150MB</p>
                     
                     <div class="upload-buttons-row">
-                        <button class="btn secondary-btn" onclick="document.getElementById('fileInput').click()">
+                        <button class="btn secondary-btn" type="button" id="browseBtn">
                             📂 Browse Files
                         </button>
-                        <button class="btn accent-btn" id="demoAudioBtn">
+                        <button class="btn accent-btn" type="button" id="demoAudioBtn">
                             ⚡ Load Demo Track
                         </button>
                     </div>
-                    <input type="file" id="fileInput" accept="audio/mp3, audio/wav, audio/flac, audio/m4a, audio/aac" hidden>
+                    <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.flac,.m4a,.aac,.ogg" hidden>
+                </div>
+
+                <!-- URL Fetch Container -->
+                <div class="url-input-card hidden" id="urlInputContainer">
+                    <div class="drop-icon-container">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                    </div>
+                    <h2>Fetch Audio From Link</h2>
+                    <p class="drag-hint">Enter direct MP3, WAV, or audio link</p>
+                    <div class="url-input-group">
+                        <input type="url" id="urlInput" class="url-input-field" placeholder="https://example.com/audio/track.mp3">
+                        <button class="btn accent-btn" id="fetchUrlBtn" type="button">⚡ Fetch Audio</button>
+                    </div>
                 </div>
 
                 <!-- File Inspector Info Panel -->
